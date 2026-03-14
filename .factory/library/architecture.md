@@ -66,20 +66,40 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 
 ```
 takkeli/
-├── pyproject.toml              # Root: uv workspace + Ruff config
+├── pyproject.toml              # Root: uv workspace + Ruff config + GPU extras
 ├── 01_data_filtering/          # ROCm: SAE filtering pipeline
-│   ├── pyproject.toml          # torch[rocm], sae-lens, transformers, datasets
-│   └── src/takkeli_filtering/
+│   ├── pyproject.toml          # torch[rocm] via "rocm" extra, sae-lens, transformers, datasets
+│   ├── src/takkeli_filtering/  # Main package
+│   │   ├── __init__.py
+│   │   └── hf_transport.py     # HF Hub upload/download utilities
+│   └── tests/
 ├── 02_pretraining/             # CUDA: Model architecture + training
-│   ├── pyproject.toml          # torch[cuda], triton, liger-kernel
-│   └── src/takkeli_pretrain/
+│   ├── pyproject.toml          # torch[cuda] via "cuda" extra, triton, liger-kernel
+│   ├── src/takkeli_pretrain/
+│   └── tests/
 ├── 03_alignment/               # CUDA: RLHF alignment
-│   ├── pyproject.toml          # torch[cuda], openrlhf, triton
-│   └── src/takkeli_align/
+│   ├── pyproject.toml          # torch[cuda] via "cuda" extra, openrlhf, triton
+│   ├── src/takkeli_align/
+│   └── tests/
 ├── 04_inference_eval/          # ROCm: GGUF export + evaluation
-│   ├── pyproject.toml          # torch[rocm], llama-cpp-python, gguf
-│   └── src/takkeli_inference/
+│   ├── pyproject.toml          # torch[rocm] via "rocm" extra, llama-cpp-python, gguf
+│   ├── src/takkeli_inference/
+│   └── tests/
 ├── design/
 │   └── llm-tech.md             # Research report
 └── .factory/                   # Mission infrastructure
 ```
+
+### GPU Dependency Management
+
+uv workspaces cannot have conflicting package indexes for the same dependency across members. Since we need both ROCm and CUDA torch, the solution uses:
+
+1. **Single PyTorch index** at root level: `https://download.pytorch.org/whl/` (serves all variants)
+2. **`[tool.uv] conflicts`**: `rocm` and `cuda` extras are mutually exclusive
+3. **Per-member `optional-dependencies`**: Each member declares its GPU variant as an optional extra
+4. **Non-GPU deps are regular `dependencies`**: Cross-platform packages like `transformers`, `datasets`, `huggingface_hub` are regular deps
+
+Usage:
+- `uv sync` — CPU-only, all members resolve (for dev/testing)
+- `uv sync --extra rocm` — Install ROCm torch (members 01, 04; local AMD machine)
+- `uv sync --extra cuda` — Install CUDA torch (members 02, 03; cloud NVIDIA machine)

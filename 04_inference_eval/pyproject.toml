@@ -1,0 +1,21 @@
+[project]
+name = "takkeli-inference"
+version = "0.1.0"
+description = "GGUF export, local inference, and model evaluation"
+requires-python = ">=3.11"
+dependencies = [
+    "llama-cpp-python>=0.3.0",
+    "gguf>=0.6.0",
+]
+
+# GPU dependencies are optional to avoid conflicting indexes across
+# workspace members. Use `uv sync --extra rocm` to install ROCm torch.
+# Hardware: AMD RX 6800 (local, ROCm 6.2).
+[project.optional-dependencies]
+rocm = [
+    "torch>=2.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

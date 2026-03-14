@@ -1,0 +1,21 @@
+[project]
+name = "takkeli-align"
+version = "0.1.0"
+description = "REINFORCE++ alignment via OpenRLHF"
+requires-python = ">=3.11"
+dependencies = []
+
+# GPU dependencies are optional to avoid conflicting indexes across
+# workspace members. Use `uv sync --extra cuda` to install CUDA torch.
+# Hardware: NVIDIA RTX 3090 / RTX Pro 6000 S (cloud, CUDA 12.4).
+[project.optional-dependencies]
+cuda = [
+    "torch>=2.1.0",
+    "triton>=3.0.0",
+    "liger-kernel>=0.4.0",
+    "openrlhf>=0.3.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

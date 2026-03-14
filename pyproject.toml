@@ -3,8 +3,23 @@ name = "takkeli"
 version = "0.1.0"
 description = "Consciousness Filter LLM Training Pipeline"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = [
+    "takkeli-filtering",
+    "takkeli-pretrain",
+    "takkeli-align",
+    "takkeli-inference",
+]
+
+# GPU extras: provide torch with the appropriate accelerator index.
+# These are re-exported from workspace members so uv can resolve sources.
+[project.optional-dependencies]
+rocm = [
+    "torch>=2.1.0",
+]
+cuda = [
+    "torch>=2.1.0",
+]
 
 [tool.uv.workspace]
 members = [
@@ -21,11 +36,39 @@ dev = [
     "ty>=0.0.1-alpha.21",
 ]
 
+# GPU accelerator extras are mutually exclusive: ROCm (AMD local) vs CUDA (NVIDIA cloud).
+# Use `uv sync --extra rocm` on the local AMD machine (members 01, 04).
+# Use `uv sync --extra cuda` on the cloud CUDA machine (members 02, 03).
+# Without extras, uv sync resolves all members without GPU packages (CPU-only).
+[tool.uv]
+conflicts = [
+    [{ extra = "rocm" }, { extra = "cuda" }],
+]
+
+# Single PyTorch index serving all accelerator variants.
+# The specific variant is selected by the local version in the resolved wheel.
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/"
+explicit = true
+
+[tool.uv.sources]
+takkeli-filtering = { workspace = true }
+takkeli-pretrain = { workspace = true }
+takkeli-align = { workspace = true }
+takkeli-inference = { workspace = true }
+
+# Torch source: all variants resolve from the same pytorch index.
+# The conflicts declaration ensures only one extra is active at a time.
+torch = [
+    { index = "pytorch" },
+]
+
 # --- Ruff: linting and formatting ---
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [

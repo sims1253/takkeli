@@ -1,5 +1,7 @@
 commands:
   install: uv sync
+  install_rocm: uv sync --extra rocm
+  install_cuda: uv sync --extra cuda
   typecheck: ty check
   lint: ruff check .
   format_check: ruff format --check .
