@@ -1,0 +1,197 @@
+{
+  "groupId": "mla-indexcache",
+  "testedAt": "2026-03-14T00:00:00Z",
+  "isolation": {
+    "workingDirectory": "/home/m0hawk/Documents/takkeli",
+    "testFiles": [
+      "02_pretraining/tests/test_mla.py",
+      "02_pretraining/tests/test_indexcache.py"
+    ],
+    "sourceFiles": [
+      "02_pretraining/src/takkeli_pretrain/mla.py",
+      "02_pretraining/src/takkeli_pretrain/indexcache.py"
+    ],
+    "hardware": "CPU-only"
+  },
+  "toolsUsed": ["pytest"],
+  "assertions": [
+    {
+      "id": "VAL-ARCH-005",
+      "title": "MLA forward pass shape — Output shape (batch, seq_len, d_model) given input of same shape",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_forward_shape_full_layer: F-layer forward with batch=2, seq_len=16, d_model=256",
+          "expected": "output.shape == (2, 16, 256)",
+          "observed": "PASSED — assertion held"
+        },
+        {
+          "action": "Run test_forward_shape_shared_layer: S-layer forward with batch=2, seq_len=16, d_model=256",
+          "expected": "output.shape == (2, 16, 256)",
+          "observed": "PASSED — assertion held"
+        },
+        {
+          "action": "Run test_forward_shape_various_batch_sizes: F-layer forward with batch in [1,4,8] and seq_len in [8,32]",
+          "expected": "output.shape == (batch, seq_len, d_model) for all combinations",
+          "observed": "PASSED — all 6 combinations passed"
+        }
+      ],
+      "evidence": {
+        "testResults": "test_forward_shape_full_layer PASSED, test_forward_shape_shared_layer PASSED, test_forward_shape_various_batch_sizes PASSED",
+        "consoleErrors": "none"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ARCH-006",
+      "title": "IndexCache F-layer computes indices — F layer returns indices tensor, non-empty, dtype torch.int64",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_f_layer_computes_indices: F-layer forward, check indices is not None, dtype torch.int64, numel > 0",
+          "expected": "All three assertions pass",
+          "observed": "PASSED — indices is not None, dtype torch.int64, numel > 0"
+        },
+        {
+          "action": "Run test_f_layer_indexer_called_flag: F-layer forward, check _indexer_called == True",
+          "expected": "Flag is True",
+          "observed": "PASSED — _indexer_called is True"
+        },
+        {
+          "action": "Run test_f_layer_has_indexer: F-layer has SparseIndexer instance",
+          "expected": "indexer is not None and isinstance SparseIndexer",
+          "observed": "PASSED"
+        },
+        {
+          "action": "Run SparseIndexer tests: test_output_dtype, test_output_non_empty, test_indices_in_valid_range",
+          "expected": "All pass",
+          "observed": "PASSED — all SparseIndexer unit tests passed"
+        }
+      ],
+      "evidence": {
+        "testResults": "test_f_layer_computes_indices PASSED, test_f_layer_indexer_called_flag PASSED, test_f_layer_has_indexer PASSED, test_output_dtype PASSED, test_output_non_empty PASSED, test_indices_in_valid_range PASSED",
+        "consoleErrors": "none"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ARCH-007",
+      "title": "IndexCache S-layer reuses indices — S-layer receives pre-computed indices, uses them without calling its own indexer",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_s_layer_no_indexer: S-layer should not have SparseIndexer",
+          "expected": "mla.indexer is None",
+          "observed": "PASSED — indexer is None"
+        },
+        {
+          "action": "Run test_s_layer_indexer_not_called: S-layer forward should not set _indexer_called",
+          "expected": "_indexer_called is False after forward",
+          "observed": "PASSED — _indexer_called is False"
+        },
+        {
+          "action": "Run test_s_layer_with_provided_indices: S-layer uses F-layer indices, output is valid shape",
+          "expected": "output.shape == (batch, seq_len, d_model), returned_indices is None",
+          "observed": "PASSED — correct output shape, returned_indices is None"
+        },
+        {
+          "action": "Run test_s_layer_output_non_trivial: S-layer with indices produces non-zero output",
+          "expected": "output.abs().sum() > 0",
+          "observed": "PASSED"
+        }
+      ],
+      "evidence": {
+        "testResults": "test_s_layer_no_indexer PASSED, test_s_layer_indexer_not_called PASSED, test_s_layer_with_provided_indices PASSED, test_s_layer_output_non_trivial PASSED, test_s_layer_without_indices_uses_full_attention PASSED",
+        "consoleErrors": "none"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ARCH-008",
+      "title": "IndexCache layer pattern string — Model accepts binary pattern string, pattern length equals num_layers, invalid patterns raise ValueError",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_valid_pattern: valid patterns 'F', 'FSFF', 'FSFFS', 'FSSSFS', 'FFFFFF', 'SSSSS' accepted",
+          "expected": "No ValueError raised",
+          "observed": "PASSED — all valid patterns accepted"
+        },
+        {
+          "action": "Run test_invalid_length_raises: patterns with wrong length raise ValueError",
+          "expected": "ValueError with 'length' in message",
+          "observed": "PASSED — ValueError raised for length mismatch"
+        },
+        {
+          "action": "Run test_invalid_characters_raise: patterns with invalid chars (X, A, B) raise ValueError",
+          "expected": "ValueError with 'invalid characters' in message",
+          "observed": "PASSED — ValueError raised for invalid characters"
+        },
+        {
+          "action": "Run test_construction_valid_pattern: IndexCacheManager('FSFFS', 5) constructs without error",
+          "expected": "manager.pattern == 'FSFFS', manager.num_layers == 5",
+          "observed": "PASSED"
+        },
+        {
+          "action": "Run test_construction_invalid_pattern_raises: IndexCacheManager('FXX', 3) raises ValueError",
+          "expected": "ValueError",
+          "observed": "PASSED"
+        },
+        {
+          "action": "Run test_pattern_string_various_lengths: valid and invalid patterns for num_layers 1-7",
+          "expected": "Valid patterns construct; invalid raise ValueError",
+          "observed": "PASSED — all 7 valid + 7 invalid patterns handled correctly"
+        }
+      ],
+      "evidence": {
+        "testResults": "test_valid_pattern PASSED, test_invalid_length_raises PASSED, test_invalid_characters_raise PASSED, test_construction_valid_pattern PASSED, test_construction_invalid_pattern_raises PASSED, test_pattern_string_various_lengths PASSED, test_empty_pattern_valid_for_zero_layers PASSED, test_non_empty_pattern_for_zero_layers_raises PASSED",
+        "consoleErrors": "none"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ARCH-009",
+      "title": "IndexCache multi-layer distillation loss — Loss is scalar, requires_grad=True, dim==0",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_loss_is_scalar: compute_distillation_loss returns 0-dim tensor",
+          "expected": "loss.dim() == 0",
+          "observed": "PASSED — loss is scalar"
+        },
+        {
+          "action": "Run test_loss_requires_grad: loss.requires_grad is True",
+          "expected": "True",
+          "observed": "PASSED — requires_grad is True"
+        },
+        {
+          "action": "Run test_loss_backward: loss.backward() succeeds, gradients flow",
+          "expected": "f_weights.grad is not None, grad.abs().sum() > 0",
+          "observed": "PASSED — backward pass works, gradients non-zero"
+        },
+        {
+          "action": "Run test_loss_non_negative: KL divergence loss >= 0",
+          "expected": "loss.item() >= 0.0",
+          "observed": "PASSED — loss is non-negative"
+        },
+        {
+          "action": "Run test_loss_multiple_s_layers: distillation works with 3 S-layers",
+          "expected": "loss.dim() == 0, loss.requires_grad",
+          "observed": "PASSED"
+        },
+        {
+          "action": "Run test_loss_zero_when_distributions_match: identical distributions give near-zero loss",
+          "expected": "loss.item() < 1e-4",
+          "observed": "PASSED — loss approaches zero for matching distributions"
+        }
+      ],
+      "evidence": {
+        "testResults": "test_loss_is_scalar PASSED, test_loss_requires_grad PASSED, test_loss_backward PASSED, test_loss_non_negative PASSED, test_loss_multiple_s_layers PASSED, test_loss_zero_when_distributions_match PASSED, test_loss_empty_s_layers_raises PASSED",
+        "consoleErrors": "none"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 5 assertions (VAL-ARCH-005 through VAL-ARCH-009): all 5 passed. All 58 tests in test_mla.py and test_indexcache.py passed in 1.36s on CPU."
+}
