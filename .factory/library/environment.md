@@ -34,8 +34,9 @@ Modules `01_data_filtering` and `04_inference_eval` use this.
 - **GPU (dev):** Vast.ai RTX 3090, 24GB VRAM
 - **GPU (final):** Vast.ai RTX Pro 6000 S, 48GB VRAM, native int4/fp4
 - **Template:** NVIDIA PyTorch template on Vast.ai (`vastai/pytorch` base image)
-- **Minimum system RAM:** 32GB recommended (64GB ideal for LEMA weight streaming offload)
-- **Minimum disk:** 100GB SSD
+- **System RAM:** 64GB (sufficient for LEMA weight streaming offload)
+- **CPU:** Threadripper
+- **Disk:** 150GB SSD
 
 ### CUDA Installation
 
@@ -46,10 +47,25 @@ Modules `02_pretraining` and `03_alignment` use CUDA:
 
 ### Vast.ai Setup
 
-- Use the **NVIDIA PyTorch** template (not just CUDA)
-- Filter: `mem_gb >= 32`, `storage >= 100`, GPU: `RTX 3090`
-- Image: `vastai/pytorch:2.6.0-cuda12.8-py311` or latest available
-- Use PROVISIONING_SCRIPT to install project dependencies via `uv sync`
+One-time setup on the cloud instance:
+```bash
+git clone <your-github-repo-url> takkeli
+cd takkeli
+uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu124
+```
+
+Day-to-day workflow:
+```bash
+git pull
+uv run ty scripts/train.py
+```
+
+Day-to-day local workflow:
+```bash
+uv sync --extra rocm --index-url https://download.pytorch.org/whl/rocm6.2
+uv run ty scripts/filter.py
+git push  # cloud instance pulls via git pull
+```
 
 ---
 

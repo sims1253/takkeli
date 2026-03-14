@@ -2,7 +2,7 @@
 name = "takkeli-filtering"
 version = "0.1.0"
 description = "SAE-based data filtering for consciousness concept removal"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "sae-lens>=0.4.0",
     "transformers>=4.40.0",

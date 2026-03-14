@@ -1,6 +1,13 @@
 """Smoke tests for 03_alignment workspace member."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 
 def test_align_package_exists() -> None:
@@ -16,13 +23,15 @@ def test_align_pyproject_toml_exists() -> None:
     assert path.is_file(), f"Missing: {path}"
 
 
-def test_align_pyproject_toml_is_valid() -> None:
-    """Verify pyproject.toml is valid TOML with required fields."""
-    import tomllib
-
+def _load_member_toml() -> dict:
     path = Path(__file__).resolve().parent.parent / "pyproject.toml"
     with open(path, "rb") as f:
-        config = tomllib.load(f)
+        return tomllib.load(f)
+
+
+def test_align_pyproject_toml_is_valid() -> None:
+    """Verify pyproject.toml is valid TOML with required fields."""
+    config = _load_member_toml()
 
     assert "project" in config
     assert config["project"]["name"] == "takkeli-align"
@@ -32,11 +41,7 @@ def test_align_pyproject_toml_is_valid() -> None:
 
 def test_align_uses_cuda() -> None:
     """Verify 03_alignment declares CUDA-compatible torch via optional dep."""
-    import tomllib
-
-    path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(path, "rb") as f:
-        config = tomllib.load(f)
+    config = _load_member_toml()
 
     opt_deps = config["project"]["optional-dependencies"]
     assert "cuda" in opt_deps
@@ -47,11 +52,7 @@ def test_align_uses_cuda() -> None:
 
 def test_align_no_rocm() -> None:
     """Verify 03_alignment does NOT declare ROCm torch."""
-    import tomllib
-
-    path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(path, "rb") as f:
-        config = tomllib.load(f)
+    config = _load_member_toml()
 
     opt_deps = config["project"]["optional-dependencies"]
     assert "rocm" not in opt_deps, "ROCm extra found in CUDA-only member"
@@ -59,11 +60,7 @@ def test_align_no_rocm() -> None:
 
 def test_align_has_required_deps() -> None:
     """Verify 03_alignment has torch, triton, liger-kernel, openrlhf in cuda extra."""
-    import tomllib
-
-    path = Path(__file__).resolve().parent.parent / "pyproject.toml"
-    with open(path, "rb") as f:
-        config = tomllib.load(f)
+    config = _load_member_toml()
 
     cuda_deps = config["project"]["optional-dependencies"]["cuda"]
     dep_names = [d.split(">=")[0].split("==")[0].split("[")[0].lower() for d in cuda_deps]
