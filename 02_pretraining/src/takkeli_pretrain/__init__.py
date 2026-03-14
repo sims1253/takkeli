@@ -35,6 +35,12 @@ from takkeli_pretrain.model import (
     RMSNorm,
     TransformerBlock,
 )
+from takkeli_pretrain.normuon import (
+    NorMuon,
+    NorMuonConfig,
+    compute_orthogonality_metric,
+    newton_schulz_orthogonalize,
+)
 
 __all__ = [
     "BitLinear",
@@ -62,4 +68,8 @@ __all__ = [
     "FeedForward",
     "RMSNorm",
     "TransformerBlock",
+    "NorMuon",
+    "NorMuonConfig",
+    "compute_orthogonality_metric",
+    "newton_schulz_orthogonalize",
 ]
