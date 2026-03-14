@@ -18,6 +18,12 @@ Environment variables, external dependencies, and setup notes.
 - **ruff:** 0.14.0
 - **ty:** 0.0.1-alpha.21
 
+### uv 0.9.0 Quirks
+
+- `[tool.uv] dev-dependencies` is **deprecated** — use PEP 735 `[dependency-groups] dev` instead
+- uv workspaces **cannot** have conflicting package indexes for the same dependency across members. Workaround: single index + optional extras + `[tool.uv] conflicts` (see `architecture.md`)
+- Use `tomli` (not `tomllib`) for TOML parsing since `requires-python >=3.10` — `tomllib` is 3.11+ only and `ty` will flag it as unresolved
+
 ### ROCm Installation
 
 For local AMD GPU support, PyTorch must be installed with the ROCm index URL:

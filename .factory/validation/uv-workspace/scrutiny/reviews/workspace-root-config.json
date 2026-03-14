@@ -1,0 +1,44 @@
+{
+  "featureId": "workspace-root-config",
+  "reviewedAt": "2026-03-14T19:45:00.000Z",
+  "commitId": "8d38001",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly creates the root pyproject.toml with a uv workspace definition containing exactly 4 members (01_data_filtering, 02_pretraining, 03_alignment, 04_inference_eval). Ruff is configured with line-length=100, target-version=py310, and lint rules E/F/I/UP/B/N/A/SIM/C4 — covering all required rules from the validation contract. The [tool.ruff.format] section uses double quotes and space indentation. pytest is configured with testpaths for all 4 members. ty is documented as the default script runner with usage comments. The .gitignore excludes all required patterns (*.safetensors, *.gguf, __pycache__/, .venv/, .python-version, *.egg-info/) plus additional sensible defaults (IDE, OS, secrets files). The git repo was initialized with a proper initial commit. All 5 verification steps passed (uv sync, ruff check, ruff format --check, ty check, git ls-files empty). The worker adapted well when uv 0.9.0 deprecated [tool.uv] dev-dependencies by switching to the modern [dependency-groups] dev syntax — this is a justified and correct deviation.",
+    "issues": [
+      {
+        "file": "pyproject.toml",
+        "line": 8,
+        "severity": "non_blocking",
+        "description": "At commit 8d38001, the root pyproject.toml listed all 4 workspace packages as project dependencies (takkeli-filtering, takkeli-pretrain, takkeli-align, takkeli-inference) but at that point the member directories did not exist yet. This is a minor ordering concern — uv sync succeeded because dependencies was []. However, note that the current HEAD (after subsequent commits) has these dependencies AND the member directories, so this was addressed by later features."
+      },
+      {
+        "file": "pyproject.toml",
+        "line": 14,
+        "severity": "non_blocking",
+        "description": "The [project.optional-dependencies] with rocm/cuda extras and [tool.uv] conflicts section were NOT present in commit 8d38001 — they were added by a subsequent feature (workspace-members). Since this feature's scope was the root config only, this is acceptable and not a gap in this feature's delivery."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The workspace-builder skill's step 2 says 'Write tests first (TDD - Red)' and expects pytest tests. However, the feature description for workspace-root-config does not include member directory creation or test writing — it only covers root config. The worker correctly scoped to root config only and did not create tests, which is appropriate. The skill should clarify which features require TDD vs. which are config-only.",
+      "evidence": "Skill SKILL.md step 2: 'Write tests first (TDD - Red)' — Create test files that verify workspace configuration. But feature description says: 'Create root pyproject.toml... Configure Ruff... Document ty... Create .gitignore... Initialize git repo.' No test requirements in the feature description. Worker followed the feature description correctly."
+    },
+    {
+      "area": "conventions",
+      "observation": "The worker correctly used [dependency-groups] dev instead of [tool.uv] dev-dependencies because uv 0.9.0 deprecated the latter. AGENTS.md and the skill do not mention this deprecation. Workers using older skill versions might use the deprecated syntax and get warnings.",
+      "evidence": "Worker transcript shows: uv sync warning about deprecated tool.uv.dev-dependencies. Worker switched to [dependency-groups] dev. The handoff skillFeedback.deviations documents this."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The uv version on this system (0.9.0) is quite recent and deprecates [tool.uv] dev-dependencies in favor of PEP 735 [dependency-groups]. This knowledge should be recorded in the library so future workers don't waste time on deprecated syntax.",
+      "evidence": "Worker transcript shows uv sync deprecation warning. AGENTS.md and library/environment.md only list tool versions but not known deprecations."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Feature workspace-root-config is a clean pass. The root pyproject.toml correctly defines a uv workspace with 4 members, Ruff linting/formatting config, pytest testpaths, and ty as the documented script runner. The .gitignore excludes all required binary file patterns. Git was initialized with a proper commit. All 5 verification commands passed with exit code 0. Two non-blocking observations about dependencies that were addressed by subsequent features. One skill-level observation about TDD scope and one knowledge observation about uv deprecations are noted for shared state improvement."
+}
