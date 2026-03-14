@@ -60,6 +60,13 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 5. **Alignment** → REINFORCE++ on filtered instruction dataset
 6. **Export** → GGUF for local AMD inference
 
+### sae-lens API Notes
+
+- `sae_lens.SAE.from_pretrained()` returns a tuple of `(sae_dict, cfg)`. Use `sae_dict[hook_name]` to get the actual SAE object.
+- `SAE.encode(activations)` returns a `torch.Tensor` of shape `(batch, seq_len, d_sae)` — not a named tuple.
+- `SAE` object has `.cfg` attribute (not `.config`) for accessing `d_sae`, `d_model`, `hook_name`, etc.
+- Always use `torch.no_grad()` context when running SAE inference to avoid tracking unnecessary gradients.
+
 ---
 
 ## Workspace Structure

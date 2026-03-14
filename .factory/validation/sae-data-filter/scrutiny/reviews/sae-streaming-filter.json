@@ -1,0 +1,82 @@
+{
+  "featureId": "sae-streaming-filter",
+  "milestone": "sae-data-filter",
+  "reviewedAt": "2026-03-14T20:30:00.000Z",
+  "commitId": "1953433bd18e7cd455eae7f9649e90c6648ce656",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "summary": "The streaming SAE filter pipeline is well-implemented across 4 new files (1,506 lines). It fulfills all three validation assertions with solid test coverage (28 tests). The code integrates cleanly with existing modules (config, sae_loader, sae_inference, hf_transport), follows project conventions, and uses lazy imports appropriately. A few minor non-blocking issues were identified but none rise to the level of blocking.",
+  "assertionsReview": {
+    "VAL-DATA-005": {
+      "status": "pass",
+      "evidence": "stream_filter() is a generator that yields a FilterResult (with passed=True/False) for every input chunk. Tests verify: 10 chunks all yield results without drops (test_processes_all_chunks_no_drops), every chunk gets a definitive pass/fail (test_yields_pass_fail_for_every_chunk), max_chunks limits processing (test_max_chunks_limits_processing), and mixed pass/fail counts are correct (test_pass_rate_with_mixed_chunks). The generator pattern ensures no data is silently dropped — the implementation iterates every example in the dataset and yields before continuing. Edge cases (empty text, missing 'text' key, no feature indices) are all handled."
+    },
+    "VAL-DATA-006": {
+      "status": "pass",
+      "evidence": "Both run_filter_pipeline() and run_filter_pipeline_with_dataset() collect passing chunks, write them to a temporary JSONL file, and call hf_transport.upload_to_hub() with repo_type='dataset' and private=True. Tests verify: upload is called with correct repo_id, repo_type='dataset', and private=True (test_upload_called_for_passing_chunks); no upload when hf_repo_id is None (test_no_upload_when_no_repo_specified); and no upload when all chunks are filtered (test_no_upload_when_all_chunks_filtered). The temporary file is cleaned up in a finally block."
+    },
+    "VAL-DATA-007": {
+      "status": "pass",
+      "evidence": "Three dedicated tests verify: no .safetensors files in git (test_no_safetensors_in_repo uses git ls-files), no .gguf files in git (test_no_gguf_in_repo), and .gitignore contains both patterns (test_gitignore_excludes_binary_patterns). Verified manually: git ls-files '*.safetensors' '*.gguf' returns empty. The .gitignore also excludes *.bin, *.pt, *.pth, *.ckpt, *.h5. The pipeline only writes to tempfiles (deleted in finally blocks) and pushes to HF Hub — no local persistence of artifacts."
+    }
+  },
+  "codeQuality": {
+    "blockingIssues": [],
+    "nonBlockingIssues": [
+      {
+        "file": "01_data_filtering/src/takkeli_filtering/streaming_filter.py",
+        "line": 313,
+        "severity": "non_blocking",
+        "description": "run_filter_pipeline_with_dataset accumulates ALL passing chunks in memory (passing_chunks list) before uploading. For large datasets, this could exhaust RAM. The high-level run_filter_pipeline() has the same issue. A production-ready version should stream to disk incrementally or upload in batches. Acceptable for the current milestone since max_chunks limits usage."
+      },
+      {
+        "file": "01_data_filtering/src/takkeli_filtering/streaming_filter.py",
+        "line": 250,
+        "severity": "non_blocking",
+        "description": "The json and os imports inside run_filter_pipeline() are placed after the loop (within the 'if passing_chunks' block), but they should ideally be at the function top or within the same scope as the tempfile usage. This is stylistic — the code works correctly because imports are cached after first load."
+      },
+      {
+        "file": "01_data_filtering/tests/test_streaming.py",
+        "line": 145,
+        "severity": "non_blocking",
+        "description": "test_filtering_correctness_with_patch uses torch.randn(1, 5, 16384) * 0.01 for 'low' activations and torch.ones(1, 5, 16384) * 10.0 for 'high' activations. Since feature_indices=(0, 1, 2) and threshold=0.5, the 'high' tensor always has values at indices 0-2 that exceed 0.5 (all are 10.0). This works but the test doesn't specifically target the monitored indices — it relies on the fact that ALL indices are high. A more precise test would set high values only at specific monitored indices."
+      },
+      {
+        "file": "01_data_filtering/src/takkeli_filtering/streaming_filter.py",
+        "line": 156,
+        "severity": "non_blocking",
+        "description": "stream_filter takes both model and sae as Any type parameters. While this provides flexibility, stronger typing (e.g., Protocol types for the expected interface) would improve IDE support and catch misuse at type-check time. The existing codebase uses Any for these in sae_loader/sae_inference too, so this is consistent."
+      },
+      {
+        "file": "01_data_filtering/scripts/explore_features.py",
+        "line": 233,
+        "severity": "non_blocking",
+        "description": "explore_features_on_dataset accesses sae.cfg.d_sae which is a sae-lens internal attribute. If the SAE library changes its config structure, this will break. A try/except with a fallback or documented assumption would be more robust."
+      },
+      {
+        "file": "01_data_filtering/tests/test_streaming.py",
+        "line": 579,
+        "severity": "non_blocking",
+        "description": "The TestNoLargeFilesInGit tests use hardcoded path '/home/m0hawk/Documents/takkeli'. This works on the developer's machine but would fail in CI or another environment. Using pathlib.Path.cwd() or a project root constant would be more portable."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "observation": "The project uses a pattern of lazy imports within function bodies for heavy dependencies (datasets, huggingface_hub, sae_lens, transformers). This is consistent across all new files and existing modules. AGENTS.md doesn't explicitly mention this pattern, though it's a sensible approach for conditional dependencies that may not be available in all environments (e.g., ROCm vs CUDA modules).",
+      "suggestedTarget": "AGENTS.md",
+      "reason": "Documenting the lazy-import convention would help future workers maintain consistency. Evidence: streaming_filter.py imports datasets/huggingface_hub/json/os inside functions; sae_loader.py imports sae_lens/transformers inside functions; explore_features.py imports takkeli_filtering modules inside functions."
+    },
+    {
+      "observation": "Pre-existing ty check failures (4 type errors in sae_loader.py related to tokenizer pad_token/eos_token union types) were noted by the worker and correctly identified as pre-existing. The worker did not introduce new type errors. These will need to be addressed before VAL-CROSS-007 (static analysis gate at every milestone) can fully pass.",
+      "suggestedTarget": "library",
+      "reason": "The pre-existing ty errors in sae_loader.py should be tracked as known issues. Evidence: handoff discoveredIssues notes 4 type errors at lines 67-68 of sae_loader.py from transformers library type stubs."
+    },
+    {
+      "observation": "The handoff mentions 63 tests total with 6 skipped (HF token required). The test_streaming.py file has 28 tests, and the pre-existing sae_loader and sae_inference tests account for the remaining 35. The HF-token-dependent tests are in the prior feature's test files.",
+      "suggestedTarget": "library",
+      "reason": "The HF token requirement for some tests is a known constraint worth documenting for future workers who may need to understand skip conditions. Evidence: handoff verification shows '63 passed, 6 skipped (HF token required)'."
+    }
+  ]
+}

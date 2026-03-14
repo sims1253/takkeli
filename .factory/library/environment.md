@@ -82,6 +82,12 @@ Artifact transport between local and cloud environments:
 - Datasets pushed to: `<user>/takkeli-filtered-<variant>`
 - Checkpoints pushed to: `<user>/takkeli-checkpoint-<stage>`
 
+### Gated Models
+
+Some HuggingFace models require authentication (HF_TOKEN) even for downloading weights:
+- **google/gemma-2-2b** is a gated model — loading via `transformers.AutoModel.from_pretrained()` or `sae_lens.SAE.from_pretrained()` requires HF_TOKEN to be set
+- Tests that use gated models should use `pytest.mark.skipif(not os.environ.get('HF_TOKEN'), ...)` to gracefully skip in CI/non-authenticated environments
+
 ---
 
 ## Key External Packages
