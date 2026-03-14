@@ -143,6 +143,15 @@ Usage:
 - `uv sync --extra rocm` — Install ROCm torch (members 01, 04; local AMD machine)
 - `uv sync --extra cuda` — Install CUDA torch (members 02, 03; cloud NVIDIA machine)
 
+### GGUF Export
+
+- **Quantization type**: BitLinear FFN layers (w_gate, w_up, w_down) use TQ1_0 quantization (`gguf.GGMLQuantizationType.TQ1_0`) with block size `QK_K=256`. The gguf library handles padding automatically when the last dimension isn't a multiple of 256.
+- **Non-ternary tensors**: Embeddings, RMSNorm gamma, MLA attention projections, and lm_head are stored as F32.
+- **BITNET tensor naming convention**: `token_embd`, `pos_embd`, `output` (lm_head), `output_norm`, `blk.{i}.attn_norm/q/k/v/output/sub_norm`, `blk.{i}.ffn_norm/gate/up/down`. This differs from llama architecture names.
+- **State dict key mapping**: Model uses `.gamma` for RMSNorm (custom implementation), `.weight` for BitLinear and nn.Linear, `.bias_param` for BitLinear bias. MLA uses nn.Linear with standard `.weight`. Router weights are intentionally excluded from export.
+- **MLA compression layers**: Down-projection layers (`w_down_q`, `w_down_kv`) compress input to latent space. Current export omits these — may need addition for complete inference.
+- **On-the-fly quantization reminder**: BitLinear stores full-precision weights in state_dict. GGUF export applies absmean quantization during conversion.
+
 ### PyTorch Gotchas
 
 - **Single-element `std()`**: When normalizing tensors that may have a single element (e.g., `tensor.std()`), PyTorch emits a warning and uses Bessel correction (N-1 denominator), which produces `NaN`. Use `unbiased=False` or check `numel() > 1` before calling `std()`. Example pattern from alignment module: `std_val = advantages.std(unbiased=False) if advantages.numel() > 1 else torch.ones_like(advantages)`.
