@@ -142,3 +142,7 @@ Usage:
 - `uv sync` — CPU-only, all members resolve (for dev/testing)
 - `uv sync --extra rocm` — Install ROCm torch (members 01, 04; local AMD machine)
 - `uv sync --extra cuda` — Install CUDA torch (members 02, 03; cloud NVIDIA machine)
+
+### PyTorch Gotchas
+
+- **Single-element `std()`**: When normalizing tensors that may have a single element (e.g., `tensor.std()`), PyTorch emits a warning and uses Bessel correction (N-1 denominator), which produces `NaN`. Use `unbiased=False` or check `numel() > 1` before calling `std()`. Example pattern from alignment module: `std_val = advantages.std(unbiased=False) if advantages.numel() > 1 else torch.ones_like(advantages)`.
