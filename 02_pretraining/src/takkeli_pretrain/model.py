@@ -107,7 +107,7 @@ class RMSNorm(nn.Module):
         Returns:
             Normalized tensor of same shape.
         """
-        rms = torch.sqrt(torch.mean(x.float() ** 2, dim=-1, keepdim=True) + self.eps)
+        rms = torch.sqrt(torch.mean(torch.square(x.float()), dim=-1, keepdim=True) + self.eps)
         x_norm = (x.float() / rms).to(x.dtype)
         return x_norm * self.gamma
 

@@ -1,0 +1,67 @@
+{
+  "featureId": "mla-indexcache",
+  "reviewedAt": "2026-03-14T21:15:00Z",
+  "commitId": "6eb27e3",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The MLA and IndexCache implementation is well-structured, thoroughly tested, and correctly covers all five validation assertions (VAL-ARCH-005 through VAL-ARCH-009). However, there are two blocking issues: (1) ty check fails with 3 diagnostics in mla.py due to register_buffer attributes not being recognized as Tensor type by the ty type checker, and (2) SparseIndexer.score_proj is dead code — a Linear layer is defined but never used in forward(). Additionally, there is no validation that d_rope <= d_head, which could cause silent incorrect behavior if misconfigured.",
+    "issues": [
+      {
+        "file": "02_pretraining/src/takkeli_pretrain/mla.py",
+        "line": 78,
+        "severity": "blocking",
+        "description": "ty check fails (exit code 1) with 3 diagnostics: register_buffer attributes (inv_freq, cos_cached, sin_cached) are inferred as Module type by ty, but are accessed as Tensor. Fix by adding explicit type annotations like `self.inv_freq: torch.Tensor` after register_buffer, or by using type: ignore comments. This violates VAL-WORKSPACE-005 which requires ty check exit code 0."
+      },
+      {
+        "file": "02_pretraining/src/takkeli_pretrain/mla.py",
+        "line": 157,
+        "severity": "blocking",
+        "description": "SparseIndexer.score_proj (nn.Linear(d_model, 1, bias=False)) is defined but never used in forward(). The forward method computes scores via torch.matmul(q, k.transpose(-2, -1)) directly. This is dead code that adds unnecessary parameters to the model. Either remove score_proj or use it in the scoring computation."
+      },
+      {
+        "file": "02_pretraining/src/takkeli_pretrain/mla.py",
+        "line": 62,
+        "severity": "non_blocking",
+        "description": "MLAConfig does not validate that d_rope <= d_model // n_heads (d_head). If d_rope > d_head, the RoPE subspace split in _apply_rope_to_subspace silently produces an empty pass-through tensor, leading to incorrect attention computation. Consider adding a validation check in __init__ or in MLAConfig."
+      },
+      {
+        "file": "02_pretraining/src/takkeli_pretrain/mla.py",
+        "line": 323,
+        "severity": "non_blocking",
+        "description": "The _sparse_attention method uses k.unsqueeze(2).expand(...) and v.unsqueeze(2).expand(...) which creates large intermediate tensors of shape (batch, n_heads, seq_len, seq_len, d_head). For long sequences this could be memory-intensive. This is acceptable for unit tests but may need optimization for production use."
+      },
+      {
+        "file": "02_pretraining/src/takkeli_pretrain/indexcache.py",
+        "line": 120,
+        "severity": "non_blocking",
+        "description": "The KL divergence direction in compute_distillation_loss is KL(F || avg_S) via kl_div with log_softmax on F. The docstring says 'KL(avg_S || F)' but the implementation computes KL(F || avg_S). The mathematical semantics differ. Verify this matches the intended IndexCache paper's formulation."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The verification steps in the feature description include 'ty check && ruff check .' but the handoff only shows ruff check being run, not ty check. The worker skipped ty check, which would have caught the 3 blocking type errors. AGENTS.md says 'All modules must pass ty check' and the verification steps explicitly list it. This suggests the worker may have assumed ruff check was sufficient or intentionally skipped ty.",
+      "evidence": "Handoff commandsRun shows 'ruff check 02_pretraining/' (exit 0) and 'ruff format --check 02_pretraining/' (exit 0) but no 'ty check' command. Feature verificationSteps include 'ty check && ruff check .'."
+    },
+    {
+      "area": "conventions",
+      "observation": "register_buffer is used in multiple files (bitlinear.py, drllm.py, mla.py) but ty cannot infer their types as Tensor. This is a systemic issue with ty + PyTorch's register_buffer pattern. AGENTS.md requires 'All modules must pass ty check' but doesn't document how to handle register_buffer type inference. Other files using register_buffer may hit the same issue.",
+      "evidence": "mla.py:78,85,86 use register_buffer. bitlinear.py:88 uses register_buffer. drllm.py:242 uses register_buffer. ty infers these as Module type."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The project uses ty (not mypy) as its type checker. ty's type inference for PyTorch's register_buffer is stricter than mypy's — it doesn't treat registered buffers as their runtime Tensor type. Workers need to add explicit type annotations after register_buffer calls to satisfy ty. This pattern should be documented in library/ or AGENTS.md for future workers.",
+      "evidence": "ty check on 02_pretraining/ shows 3 diagnostics, all from register_buffer. The same pattern in bitlinear.py (gamma) and drllm.py (alpha) may also fail if those attributes are subscripted or passed to torch functions expecting Tensor."
+    },
+    {
+      "area": "conventions",
+      "observation": "The SparseIndexer class accepts d_model as a constructor argument (used for score_proj) but the forward method actually operates on (batch, n_heads, seq_len, d_head) shaped tensors, not (batch, seq_len, d_model). The d_model parameter is only used for the unused score_proj, creating a misleading interface.",
+      "evidence": "mla.py:149 - SparseIndexer.__init__(d_model, sparse_top_k) creates score_proj with d_model. mla.py:167 - forward(q, k) operates on 4D tensors with d_head dimension. score_proj is never called."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The MLA + IndexCache implementation is functionally correct and well-tested (58 tests, all passing). It correctly covers VAL-ARCH-005 (forward shape), VAL-ARCH-006 (F-layer indices), VAL-ARCH-007 (S-layer index reuse), VAL-ARCH-008 (pattern validation), and VAL-ARCH-009 (distillation loss). However, two blocking issues prevent pass: (1) ty check fails with 3 diagnostics on register_buffer attributes in RotaryPositionEmbedding, and (2) SparseIndexer.score_proj is dead code. Three non-blocking observations include missing d_rope <= d_head validation, memory-intensive sparse attention expansion, and a potential KL divergence direction mismatch in the docstring vs implementation. Shared state observations flag that ty + register_buffer is a systemic pattern workers need guidance on, and that the worker skipped ty check during verification."
+}

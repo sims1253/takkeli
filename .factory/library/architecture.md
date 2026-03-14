@@ -11,18 +11,27 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 - Weights strictly in `{-1, 0, 1}`, scaling factor `gamma` stored separately
 - Eliminates floating-point matmul: only integer add/subtract
 - 7.2x memory reduction vs FP16
+- **On-the-fly quantization**: `BitLinear` stores full-precision weights as `nn.Parameter` and quantizes to ternary during `forward()` (STE-like approach). Saved weights in `state_dict()` are full-precision, NOT ternary. GGUF export must apply quantization.
+- **gamma buffer**: Registered with `persistent=False` — not included in `state_dict()`. Recomputed each forward pass. Downstream checkpoint code should not expect gamma in saved weights.
+- **bias naming**: Uses `bias_param` (not `bias`) to avoid attribute shadowing. Access via named parameter API.
 
 ### DeepSeek MLA + IndexCache
 - Multi-Head Latent Attention compresses KV cache via latent projection
 - IndexCache adds F/S layer pattern: F layers compute sparse indices, S layers reuse them
 - Multi-layer distillation loss: F-layer indexer trained against averaged attention of served S-layers
 - 1.82x prefill speedup, 75% indexer compute reduction
+- **Default F/S pattern**: `'FSFFSFSFFSFSFFSFSFFSFSFF'` (14 F-layers, 10 S-layers) for the 24-layer 1B model
+- **Sparse attention memory**: `_sparse_attention` creates large intermediates via `expand()`. Acceptable for unit tests but may need optimization for long sequences.
+- **KL divergence direction**: `compute_distillation_loss` computes KL(F || avg_S), not KL(avg_S || F).
 
 ### Dr.LLM Dynamic Routing
 - Per-layer router outputs 3-way gate: Skip, Execute, Repeat
 - MCTS-supervised training for optimal routing patterns
 - Windowed pooling + focal loss for routing stability
 - ~5 layers skipped per sequence on average
+- **Soft routing (training)**: Uses probability-weighted combination (p_skip * x + p_execute * ffn(x) + p_repeat * ffn(ffn(x))) for gradient flow. FFN is always computed, never truly skipped. At inference, argmax can be applied for actual skipping.
+- **d_ffn = 5504**: Reduced from design spec of 8192 (4x expansion) to fit 800M-1.2B parameter budget with 24 layers, d_model=2048. Actual expansion ratio is 2.69x.
+- **WindowedPool zero-padding**: Pads with zeros when seq_len is not evenly divisible by window_size, introducing slight bias toward zero.
 
 ---
 

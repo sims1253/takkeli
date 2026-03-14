@@ -18,11 +18,13 @@ Environment variables, external dependencies, and setup notes.
 - **ruff:** 0.14.0
 - **ty:** 0.0.1-alpha.21
 
-### uv 0.9.0 Quirks
+### ty 0.0.1-alpha.21 Quirks
 
 - `[tool.uv] dev-dependencies` is **deprecated** — use PEP 735 `[dependency-groups] dev` instead
 - uv workspaces **cannot** have conflicting package indexes for the same dependency across members. Workaround: single index + optional extras + `[tool.uv] conflicts` (see `architecture.md`)
 - Use `tomli` (not `tomllib`) for TOML parsing since `requires-python >=3.10` — `tomllib` is 3.11+ only and `ty` will flag it as unresolved
+- **Tensor power operator**: `ty` flags `tensor ** 2` (unsupported-operator). Use `torch.square(tensor)` instead.
+- **`register_buffer` type inference**: `ty` infers `register_buffer` attributes as `Module` type. Currently this does NOT produce errors unless the attributes are explicitly subscripted or passed to strict-typed functions. If errors arise, add explicit annotations like `self.inv_freq: torch.Tensor = ...` after the `register_buffer` call.
 
 ### ROCm Installation
 

@@ -146,15 +146,13 @@ class SparseIndexer(nn.Module):
     position, producing integer indices used for sparse attention.
 
     Args:
-        d_model: Input dimension.
+        d_model: Input dimension (retained for interface compatibility).
         sparse_top_k: Number of top-K indices to select per query position.
     """
 
     def __init__(self, d_model: int, sparse_top_k: int = 64) -> None:
         super().__init__()
         self.sparse_top_k = sparse_top_k
-        # Lightweight projection for scoring query-key relevance
-        self.score_proj = nn.Linear(d_model, 1, bias=False)
 
     def forward(
         self,
