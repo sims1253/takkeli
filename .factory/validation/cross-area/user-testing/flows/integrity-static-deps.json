@@ -1,0 +1,110 @@
+{
+  "assertionGroup": "integrity-static-deps",
+  "milestone": "cross-area",
+  "timestamp": "2026-03-14T12:00:00Z",
+  "isolation": {
+    "testingSurface": "pytest (CPU) + shell commands for static analysis",
+    "projectRoot": "/home/m0hawk/Documents/takkeli",
+    "python": "3.10.12",
+    "packageManager": "uv",
+    "hardware": "CPU only, no GPU"
+  },
+  "toolsUsed": ["pytest", "ruff"],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-006",
+      "title": "HF Hub round-trip artifact integrity (SHA-256)",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest -k TestHFHubRoundTripIntegrity",
+          "expected": "All 6 tests pass, verifying SHA-256 round-trip and transport function signatures",
+          "observed": "6 passed in 1.26s (test_sha256_local_roundtrip, test_sha256_large_file_roundtrip, test_sha256_jsonl_dataset_roundtrip, test_sha256_checkpoint_roundtrip, test_hf_transport_upload_download_signatures, test_hf_transport_upload_validates_inputs)"
+        }
+      ],
+      "evidence": {
+        "testsRun": [
+          "TestHFHubRoundTripIntegrity::test_sha256_local_roundtrip",
+          "TestHFHubRoundTripIntegrity::test_sha256_large_file_roundtrip",
+          "TestHFHubRoundTripIntegrity::test_sha256_jsonl_dataset_roundtrip",
+          "TestHFHubRoundTripIntegrity::test_sha256_checkpoint_roundtrip",
+          "TestHFHubRoundTripIntegrity::test_hf_transport_upload_download_signatures",
+          "TestHFHubRoundTripIntegrity::test_hf_transport_upload_validates_inputs"
+        ],
+        "testOutput": "6 passed, 21 deselected, 2 warnings in 1.26s",
+        "exitCode": 0,
+        "evidenceFiles": [
+          "cross-area/integrity-static-deps/VAL-CROSS-006-test-output.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-007",
+      "title": "Static analysis gate at every milestone",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest -k TestStaticAnalysisGate",
+          "expected": "All 3 tests pass (all modules importable, cross-module interfaces exist, state dict compatibility)",
+          "observed": "3 passed in 1.98s"
+        },
+        {
+          "action": "Run ruff check .",
+          "expected": "Exit code 0, no violations",
+          "observed": "All checks passed! (exit code 0)"
+        },
+        {
+          "action": "Run ruff format --check .",
+          "expected": "Exit code 0, all files formatted",
+          "observed": "54 files already formatted (exit code 0)"
+        }
+      ],
+      "evidence": {
+        "testsRun": [
+          "TestStaticAnalysisGate::test_all_modules_importable",
+          "TestStaticAnalysisGate::test_cross_module_interfaces_exist",
+          "TestStaticAnalysisGate::test_model_state_dict_compatible_across_modules"
+        ],
+        "testOutput": "3 passed, 24 deselected, 2 warnings in 1.98s",
+        "ruffCheckOutput": "All checks passed!",
+        "ruffFormatOutput": "54 files already formatted",
+        "exitCode": 0,
+        "evidenceFiles": [
+          "cross-area/integrity-static-deps/VAL-CROSS-007-test-output.txt",
+          "cross-area/integrity-static-deps/VAL-CROSS-007-ruff-check.txt",
+          "cross-area/integrity-static-deps/VAL-CROSS-007-ruff-format.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "title": "Module dependency graph is acyclic",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest -k TestModuleDependencyGraphAcyclic",
+          "expected": "All 3 tests pass verifying no forward imports, linear data flow, and DAG structure",
+          "observed": "3 passed in 1.48s (test_no_later_module_imports_earlier_module, test_data_flows_linearly, test_import_graph_is_dag)"
+        }
+      ],
+      "evidence": {
+        "testsRun": [
+          "TestModuleDependencyGraphAcyclic::test_no_later_module_imports_earlier_module",
+          "TestModuleDependencyGraphAcyclic::test_data_flows_linearly",
+          "TestModuleDependencyGraphAcyclic::test_import_graph_is_dag"
+        ],
+        "testOutput": "3 passed, 24 deselected, 2 warnings in 1.48s",
+        "exitCode": 0,
+        "evidenceFiles": [
+          "cross-area/integrity-static-deps/VAL-CROSS-008-test-output.txt"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all passed. VAL-CROSS-006 (6/6 SHA-256 round-trip tests), VAL-CROSS-007 (3/3 import/compatibility tests + ruff check/format exit 0), VAL-CROSS-008 (3/3 acyclic dependency graph tests). No frictions or blockers encountered."
+}

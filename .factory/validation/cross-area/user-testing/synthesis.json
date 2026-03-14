@@ -1,0 +1,42 @@
+{
+  "milestone": "cross-area",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-CROSS-001",
+    "VAL-CROSS-002",
+    "VAL-CROSS-003",
+    "VAL-CROSS-004",
+    "VAL-CROSS-005",
+    "VAL-CROSS-006",
+    "VAL-CROSS-007",
+    "VAL-CROSS-008"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "flowReports": [
+    ".factory/validation/cross-area/user-testing/flows/data-checkpoint-gguf.json",
+    ".factory/validation/cross-area/user-testing/flows/integrity-static-deps.json"
+  ],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "testingSurface": "pytest (CPU terminal-based) + ruff static analysis",
+  "totalTestsRun": 27,
+  "testExecutionTime": "3.51s for full suite",
+  "details": {
+    "VAL-CROSS-001": "Filtered dataset loads via datasets.load_dataset() and yields valid token tensors. 2 tests passed.",
+    "VAL-CROSS-002": "Model checkpoint save/load round-trip produces identical outputs, keys, and parameter values. 3 tests passed.",
+    "VAL-CROSS-003": "Saved checkpoint converts to GGUF with valid magic number (0x46554747). GGUF file is readable. 3 tests passed.",
+    "VAL-CROSS-004": "RLHF pipeline loads pretrained weights as policy and reference model. Reference is frozen. Valid logits produced. 4 tests passed.",
+    "VAL-CROSS-005": "Aligned checkpoint (post-RLHF) exports to GGUF with required metadata (model name, context length, embedding dim, vocab size). 2 tests passed.",
+    "VAL-CROSS-006": "SHA-256 round-trip verified for local files, large files, JSONL datasets, and PyTorch checkpoints. HF transport function signatures validated. 6 tests passed.",
+    "VAL-CROSS-007": "All 4 modules importable. Cross-module interfaces verified. Model state dict compatible across modules. ruff check . (exit 0). ruff format --check . (54 files, exit 0). 3 tests + 2 external commands passed.",
+    "VAL-CROSS-008": "No forward dependency violations. Data flows linearly 01->02->03->04. Import graph is a DAG (verified via topological sort). 3 tests passed."
+  }
+}
