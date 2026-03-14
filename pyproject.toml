@@ -90,6 +90,7 @@ indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = [
+    "tests",
     "01_data_filtering/tests",
     "02_pretraining/tests",
     "03_alignment/tests",
