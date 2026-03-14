@@ -1,0 +1,76 @@
+{
+  "flowId": "align-algorithm",
+  "description": "VAL-ALIGN-004: Global advantage norm, VAL-ALIGN-005: Token-level KL, VAL-ALIGN-006: Trust region clipping, VAL-ALIGN-007: Loss differentiable, VAL-ALIGN-008: Memory budget",
+  "assertions": ["VAL-ALIGN-004", "VAL-ALIGN-005", "VAL-ALIGN-006", "VAL-ALIGN-007", "VAL-ALIGN-008"],
+  "status": "pass",
+  "tool": "pytest",
+  "evidence": {
+    "commands": [
+      "uv run pytest 03_alignment/tests/test_reinforcepp.py::TestGlobalAdvantageNormalization -v → 7 passed",
+      "uv run pytest 03_alignment/tests/test_reinforcepp.py::TestTokenLevelKL -v → 5 passed",
+      "uv run pytest 03_alignment/tests/test_reinforcepp.py::TestTrustRegionClipping -v → 4 passed",
+      "uv run pytest 03_alignment/tests/test_reinforcepp.py::TestReinforcePPLoss -v → 7 passed",
+      "uv run pytest 03_alignment/tests/test_reinforcepp.py::TestMemoryBudget -v → 2 passed"
+    ],
+    "details": {
+      "VAL-ALIGN-004": {
+        "status": "pass",
+        "tests": [
+          "test_normalizes_to_zero_mean: Normalized advantages have zero mean",
+          "test_normalizes_to_unit_std: Normalized advantages have unit std",
+          "test_global_not_per_group: Verifies global (not per-group) normalization",
+          "test_2d_advantages: Works on (batch, seq_len) shape",
+          "test_preserves_shape: Output shape matches input",
+          "test_constant_advantages_stable: No division by zero",
+          "test_single_element_batch: Single element doesn't crash"
+        ],
+        "observations": "global_normalize_advantages() normalizes across the entire batch using global mean and std. Test 'test_global_not_per_group' explicitly proves normalization is not per-group by showing group means are non-zero after global normalization."
+      },
+      "VAL-ALIGN-005": {
+        "status": "pass",
+        "tests": [
+          "test_shape_is_batch_seq_len: KL tensor shape is (batch, seq_len)",
+          "test_non_negative_values: All KL values >= 0",
+          "test_kl_zero_when_identical: D_KL(pi||pi) = 0",
+          "test_kl_positive_when_different: KL > 0 when distributions differ",
+          "test_varying_batch_size: Shape invariant under batch size"
+        ],
+        "observations": "token_level_kl() computes D_KL(policy || reference) = exp(log_pi) * (log_pi - log_ref), clamped to min=0 for numerical stability. Output shape is (batch, seq_len), all values non-negative."
+      },
+      "VAL-ALIGN-006": {
+        "status": "pass",
+        "tests": [
+          "test_clipped_within_bounds: Ratios in [0.8, 1.2]",
+          "test_extreme_ratios_clipped: Extreme log-ratios (exp(10)) clipped to bounds",
+          "test_moderate_ratios_unchanged: Ratios already in bounds preserved",
+          "test_custom_clip_range: Custom epsilon respected"
+        ],
+        "observations": "clip_log_ratio() computes ratio = exp(log_pi - log_ref) and clamps to [clip_low, clip_high]. Default bounds are [0.8, 1.2] (clip_range=0.2). Extreme ratios (e.g., exp(10) ≈ 22026) are clipped correctly."
+      },
+      "VAL-ALIGN-007": {
+        "status": "pass",
+        "tests": [
+          "test_loss_is_scalar: loss.dim() == 0",
+          "test_loss_requires_grad: loss.requires_grad is True",
+          "test_loss_supports_backward: loss.backward() succeeds, gradients flow",
+          "test_loss_value_reasonable: Loss is finite",
+          "test_zero_kl_when_identical: KL term vanishes when policy==reference",
+          "test_higher_kl_increases_loss: Higher kl_coeff increases total loss",
+          "test_backward_propagates_to_policy_logits: Gradients reach input logits"
+        ],
+        "observations": "reinforce_pp_loss() returns a scalar with requires_grad=True. Supports backward() and gradients propagate through log-prob computation to input logits. Combines clipped policy gradient + KL penalty."
+      },
+      "VAL-ALIGN-008": {
+        "status": "pass",
+        "tests": [
+          "test_memory_budget_cpu_proxy: Pipeline (policy+reference, no critic) with batch=1, seq_len=128 uses < 12GB RAM",
+          "test_pipeline_has_no_critic: No critic_model or value_model attribute"
+        ],
+        "observations": "CPU proxy test with a tiny model (vocab=320, d_model=64) verifies pipeline structure: creates policy + reference (no critic). tracemalloc confirms peak memory well under 12GB. Uses TinyModel as proxy since actual 1B model is too slow for CPU unit tests."
+      }
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["pytest"]
+}

@@ -1,0 +1,46 @@
+{
+  "flowId": "align-config",
+  "description": "VAL-ALIGN-001: Config loads, VAL-ALIGN-002: Single-GPU, VAL-ALIGN-003: No critic",
+  "assertions": ["VAL-ALIGN-001", "VAL-ALIGN-002", "VAL-ALIGN-003"],
+  "status": "pass",
+  "tool": "pytest",
+  "evidence": {
+    "commands": [
+      "uv run pytest 03_alignment/tests/test_config.py -v -k 'openrlhf_compatible or to_dict_round_trip or load_json' → 3 passed",
+      "uv run pytest 03_alignment/tests/test_config.py -v -k 'single_gpu or multi_gpu or tensor_parallel' → 4 passed",
+      "uv run pytest 03_alignment/tests/test_config.py -v -k 'no_critic or use_critic' → 2 passed"
+    ],
+    "details": {
+      "VAL-ALIGN-001": {
+        "status": "pass",
+        "tests": [
+          "test_to_dict_round_trip: Config -> dict -> Config round-trip preserves values",
+          "test_load_json_round_trip: Config -> JSON file -> Config round-trip",
+          "test_openrlhf_compatible_structure: Config has top-level keys (model, algorithm, hardware, optimizer, use_critic) and algorithm keys (kl_coeff, clip_range, clip_range_low, clip_range_high, normalize_advantage, norm_adv_batch)"
+        ],
+        "observations": "ReinforcePPPipelineConfig is a dataclass that serializes to dict/JSON/YAML. Config.to_dict() produces a dict with all required OpenRLHF-compatible keys. Round-trip serialization preserves all values."
+      },
+      "VAL-ALIGN-002": {
+        "status": "pass",
+        "tests": [
+          "test_default_single_gpu: HardwareConfig defaults to n_gpus=1, tensor_parallel_size=1",
+          "test_multi_gpu_raises: HardwareConfig(n_gpus=4) raises ValueError",
+          "test_tensor_parallel_raises: HardwareConfig(tensor_parallel_size=2) raises ValueError",
+          "test_single_gpu_config: ReinforcePPPipelineConfig defaults to single GPU"
+        ],
+        "observations": "HardwareConfig enforces n_gpus=1 and tensor_parallel_size=1 via __post_init__ validation. Attempting to set multi-GPU or tensor-parallel raises ValueError. Memory budget defaults to 24GB."
+      },
+      "VAL-ALIGN-003": {
+        "status": "pass",
+        "tests": [
+          "test_use_critic_raises: ReinforcePPPipelineConfig(use_critic=True) raises ValueError with 'critic-free'",
+          "test_no_critic_model: ReinforcePPPipelineConfig defaults to use_critic=False"
+        ],
+        "observations": "ReinforcePPPipelineConfig.__post_init__ raises ValueError when use_critic=True. Pipeline class asserts not self.config.use_critic. No critic_model or value_model attribute exists in ReinforcePPPipeline."
+      }
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["pytest"]
+}
