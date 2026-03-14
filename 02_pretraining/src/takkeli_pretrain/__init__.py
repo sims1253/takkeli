@@ -5,6 +5,15 @@ from takkeli_pretrain.bitlinear import (
     absmean_quantize,
     round_clip,
 )
+from takkeli_pretrain.drllm import (
+    EXECUTE,
+    REPEAT,
+    SKIP,
+    DrLLMConfig,
+    DynamicRouter,
+    FocalLoss,
+    WindowedPool,
+)
 from takkeli_pretrain.indexcache import (
     IndexCacheConfig,
     IndexCacheManager,
@@ -19,11 +28,25 @@ from takkeli_pretrain.mla import (
     RotaryPositionEmbedding,
     SparseIndexer,
 )
+from takkeli_pretrain.model import (
+    DrLLMModel,
+    FeedForward,
+    ModelConfig,
+    RMSNorm,
+    TransformerBlock,
+)
 
 __all__ = [
     "BitLinear",
     "absmean_quantize",
     "round_clip",
+    "DrLLMConfig",
+    "DynamicRouter",
+    "FocalLoss",
+    "WindowedPool",
+    "SKIP",
+    "EXECUTE",
+    "REPEAT",
     "MLAConfig",
     "MultiHeadLatentAttention",
     "RotaryPositionEmbedding",
@@ -34,4 +57,9 @@ __all__ = [
     "validate_pattern",
     "get_f_layer_indices",
     "get_nearest_f_layer",
+    "ModelConfig",
+    "DrLLMModel",
+    "FeedForward",
+    "RMSNorm",
+    "TransformerBlock",
 ]
