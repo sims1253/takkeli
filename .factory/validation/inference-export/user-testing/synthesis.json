@@ -1,0 +1,30 @@
+{
+  "milestone": "inference-export",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-EXPORT-001",
+    "VAL-EXPORT-002",
+    "VAL-EXPORT-003",
+    "VAL-EXPORT-004",
+    "VAL-EXPORT-005",
+    "VAL-EXPORT-006",
+    "VAL-EXPORT-007",
+    "VAL-EXPORT-008"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "flowReports": [
+    ".factory/validation/inference-export/user-testing/flows/gguf-export.json",
+    ".factory/validation/inference-export/user-testing/flows/inference-evaluation.json"
+  ],
+  "notes": "All 8 VAL-EXPORT assertions passed. GGUF export tests (32 passed), inference tests (40 passed), evaluation tests (29 passed). Total: 101 tests passed, 0 failed. VAL-EXPORT-005 (coherent text) and VAL-EXPORT-008 (ROCm/Vulkan backend) are validated via mocked tests — actual factual accuracy and GPU backend selection require manual verification on target hardware (AMD RX 6800)."
+}

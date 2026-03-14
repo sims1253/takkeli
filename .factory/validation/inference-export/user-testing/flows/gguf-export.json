@@ -1,0 +1,109 @@
+{
+  "groupId": "gguf-export",
+  "testedAt": "2026-03-14T00:00:00Z",
+  "isolation": {
+    "repoRoot": "/home/m0hawk/Documents/takkeli",
+    "workspaceMember": "04_inference_eval",
+    "testingSurface": "pytest on CPU"
+  },
+  "toolsUsed": ["pytest"],
+  "assertions": [
+    {
+      "id": "VAL-EXPORT-001",
+      "title": "BitLinear weights convert to GGUF",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_magic_number",
+          "expected": "GGUF file has magic number 0x46554747",
+          "observed": "PASSED - magic number verified"
+        },
+        {
+          "action": "Run test_file_is_readable_by_gguf_library",
+          "expected": "gguf.GGUFReader opens file with fields and tensors",
+          "observed": "PASSED - reader loaded with fields > 0 and tensors > 0"
+        },
+        {
+          "action": "Run test_export_from_checkpoint_produces_valid_gguf",
+          "expected": "Export from PyTorch checkpoint produces valid GGUF file",
+          "observed": "PASSED - file created, magic verified, tensors present"
+        }
+      ],
+      "evidence": {
+        "description": "All 3 GGUF validity tests passed. Output file has correct magic number (0x46554747), is readable by the gguf library, and export from checkpoint produces a valid GGUF with tensors.",
+        "evidenceFile": "inference-export/gguf-export/test_output.txt"
+      },
+      "testOutput": "TestGGUFValidity::test_magic_number PASSED\nTestGGUFValidity::test_file_is_readable_by_gguf_library PASSED\nTestGGUFValidity::test_export_from_checkpoint_produces_valid_gguf PASSED",
+      "issues": null
+    },
+    {
+      "id": "VAL-EXPORT-002",
+      "title": "Ternary weight fidelity in GGUF",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_ffn_weights_are_ternary_after_dequantization",
+          "expected": "FFN TQ1_0 tensors dequantize to values in {-1, 0, 1}",
+          "observed": "PASSED - all FFN TQ1_0 tensors have ternary values after dequantization"
+        },
+        {
+          "action": "Run test_all_ffn_layers_have_ternary_weights",
+          "expected": "Every layer's FFN gate, up, down are TQ1_0 quantized",
+          "observed": "PASSED - 6 FFN tensors found across 2 layers, all TQ1_0"
+        },
+        {
+          "action": "Run test_ternary_quantization_round_trip",
+          "expected": "Quantize then dequantize preserves {-1, 0, 1}",
+          "observed": "PASSED - round-trip produces only ternary values"
+        }
+      ],
+      "evidence": {
+        "description": "All 3 ternary fidelity tests passed. TQ1_0 quantized FFN weights dequantize to strictly ternary values {-1, 0, 1}. All FFN layers have TQ1_0 quantization. Round-trip quantization-dequantization preserves ternary values.",
+        "evidenceFile": "inference-export/gguf-export/test_output.txt"
+      },
+      "testOutput": "TestTernaryWeightFidelity::test_ffn_weights_are_ternary_after_dequantization PASSED\nTestTernaryWeightFidelity::test_all_ffn_layers_have_ternary_weights PASSED\nTestTernaryWeightFidelity::test_ternary_quantization_round_trip PASSED",
+      "issues": null
+    },
+    {
+      "id": "VAL-EXPORT-003",
+      "title": "GGUF file metadata present",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run test_model_name_present",
+          "expected": "general.name metadata key present",
+          "observed": "PASSED - general.name = 'takkeli-1b'"
+        },
+        {
+          "action": "Run test_context_length_present",
+          "expected": "bitnet.context_length metadata key present",
+          "observed": "PASSED - bitnet.context_length = 512"
+        },
+        {
+          "action": "Run test_embedding_dim_present",
+          "expected": "bitnet.embedding_length metadata key present",
+          "observed": "PASSED - bitnet.embedding_length = 1024"
+        },
+        {
+          "action": "Run test_vocab_size_present",
+          "expected": "bitnet.vocab_size metadata key present",
+          "observed": "PASSED - bitnet.vocab_size = 16000"
+        },
+        {
+          "action": "Run test_metadata_values_are_nonzero",
+          "expected": "context_length, embedding_length, vocab_size all > 0",
+          "observed": "PASSED - all values verified non-zero"
+        }
+      ],
+      "evidence": {
+        "description": "All 5 metadata tests passed (plus 2 bonus tests). All four required metadata keys present with correct values: general.name, bitnet.context_length, bitnet.embedding_length, bitnet.vocab_size. All values are non-zero/non-empty.",
+        "evidenceFile": "inference-export/gguf-export/test_output.txt"
+      },
+      "testOutput": "TestGGUFMetadata::test_model_name_present PASSED\nTestGGUFMetadata::test_context_length_present PASSED\nTestGGUFMetadata::test_embedding_dim_present PASSED\nTestGGUFMetadata::test_vocab_size_present PASSED\nTestGGUFMetadata::test_metadata_values_are_nonzero PASSED\nTestGGUFMetadata::test_all_required_metadata_from_export PASSED\nTestGGUFMetadata::test_architecture_metadata PASSED",
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all 3 passed. Full test suite: 32 passed, 0 failed, 2 warnings (DeprecationWarnings from SwigPyPacked/SwigPyObject, unrelated to test logic). VAL-EXPORT-001: GGUF file validity confirmed (magic number, library readability, checkpoint export). VAL-EXPORT-002: Ternary weight fidelity confirmed (TQ1_0 dequantization, all layers, round-trip). VAL-EXPORT-003: All required metadata present with non-zero values."
+}
