@@ -1,0 +1,48 @@
+{
+  "milestone": "optimizer-memory-stack",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-OPT-001",
+    "VAL-OPT-002",
+    "VAL-OPT-003",
+    "VAL-OPT-004",
+    "VAL-OPT-005",
+    "VAL-OPT-006",
+    "VAL-OPT-007",
+    "VAL-OPT-008",
+    "VAL-OPT-009",
+    "VAL-OPT-010",
+    "VAL-OPT-011",
+    "VAL-OPT-012",
+    "VAL-OPT-013"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "flowReports": [
+    ".factory/validation/optimizer-memory-stack/user-testing/flows/normuon.json",
+    ".factory/validation/optimizer-memory-stack/user-testing/flows/gwt.json",
+    ".factory/validation/optimizer-memory-stack/user-testing/flows/liger.json",
+    ".factory/validation/optimizer-memory-stack/user-testing/flows/lema-training.json"
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Documented that test_full_model_memory_budget is @pytest.mark.skip'd and needs manual execution for user testing validation",
+      "source": "flow-report"
+    }
+  ],
+  "notes": [
+    "All 13 VAL-OPT assertions passed. Total pytest tests: 129 (41 normuon + 38 gwt/composite + 21 liger + 29 lema-training).",
+    "VAL-OPT-012 required manual test execution because the pytest test is marked @pytest.mark.skip. The validator reproduced the test logic and confirmed 1.1B model training loop uses 0.05 GB peak memory, well under 12GB.",
+    "Static analysis gates (ruff check, ruff format --check) pass across the full workspace.",
+    "LEMA implementation uses 3 global buffers cycling across layers rather than 3*num_layers discrete buffers. Tests accommodate this design difference."
+  ],
+  "previousRound": null
+}

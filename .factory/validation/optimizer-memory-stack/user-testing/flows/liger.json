@@ -1,0 +1,71 @@
+{
+  "groupId": "liger",
+  "milestone": "optimizer-memory-stack",
+  "testedAt": "2026-03-14T00:00:00Z",
+  "isolation": {
+    "workingDirectory": "/home/m0hawk/Documents/takkeli",
+    "testingSurface": "CPU pytest (no GPU)",
+    "testFile": "02_pretraining/tests/test_liger_kernels.py",
+    "sourceFile": "02_pretraining/src/takkeli_pretrain/liger_ops.py"
+  },
+  "toolsUsed": ["pytest"],
+  "assertions": [
+    {
+      "id": "VAL-OPT-007",
+      "title": "Liger RMSNorm fused kernel equivalence",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest on TestLigerRMSNorm class (8 tests)",
+          "expected": "All RMSNorm tests pass, including equivalence check at atol=1e-5",
+          "observed": "All 8 tests PASSED: test_basic_shape, test_equivalence_random_input, test_equivalence_different_shapes, test_equivalence_different_hidden_sizes, test_weight_scaling, test_functional_form, test_gradient_flow, test_eps_numerical_stability"
+        }
+      ],
+      "evidence": {
+        "testOutput": "02_pretraining/tests/test_liger_kernels.py::TestLigerRMSNorm::test_equivalence_random_input PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerRMSNorm::test_equivalence_different_shapes PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerRMSNorm::test_equivalence_different_hidden_sizes PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerRMSNorm::test_functional_form PASSED\n(all 8 RMSNorm tests passed, 21 total in 1.69s)",
+        "tolerance": "atol=1e-5",
+        "evidenceFiles": ["evidence/optimizer-memory-stack/liger/pytest_output.txt"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-OPT-008",
+      "title": "Liger RoPE fused kernel equivalence",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest on TestLigerRoPE class (6 tests)",
+          "expected": "All RoPE tests pass, including equivalence check at atol=1e-5",
+          "observed": "All 6 tests PASSED: test_basic_shape, test_equivalence_random_input, test_partial_rotary_dim, test_different_seq_lengths, test_gradient_flow, test_position_dependency"
+        }
+      ],
+      "evidence": {
+        "testOutput": "02_pretraining/tests/test_liger_kernels.py::TestLigerRoPE::test_equivalence_random_input PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerRoPE::test_partial_rotary_dim PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerRoPE::test_different_seq_lengths PASSED\n(all 6 RoPE tests passed, 21 total in 1.69s)",
+        "tolerance": "atol=1e-5",
+        "evidenceFiles": ["evidence/optimizer-memory-stack/liger/pytest_output.txt"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-OPT-009",
+      "title": "Liger SwiGLU fused kernel equivalence",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest on TestLigerSwiGLU class (7 tests)",
+          "expected": "All SwiGLU tests pass, including equivalence check at atol=1e-4",
+          "observed": "All 7 tests PASSED: test_basic_shape, test_equivalence_random_input, test_equivalence_different_sizes, test_functional_form, test_gradient_flow, test_zero_input, test_with_model_config_sizes"
+        }
+      ],
+      "evidence": {
+        "testOutput": "02_pretraining/tests/test_liger_kernels.py::TestLigerSwiGLU::test_equivalence_random_input PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerSwiGLU::test_equivalence_different_sizes PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerSwiGLU::test_functional_form PASSED\n02_pretraining/tests/test_liger_kernels.py::TestLigerSwiGLU::test_with_model_config_sizes PASSED\n(all 7 SwiGLU tests passed, 21 total in 1.69s)",
+        "tolerance": "atol=1e-4",
+        "evidenceFiles": ["evidence/optimizer-memory-stack/liger/pytest_output.txt"]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions (VAL-OPT-007, VAL-OPT-008, VAL-OPT-009): all 3 passed. All 21 pytest tests in test_liger_kernels.py passed in 1.69s on CPU. Liger RMSNorm matches reference at atol=1e-5, RoPE matches at atol=1e-5, SwiGLU matches at atol=1e-4."
+}
