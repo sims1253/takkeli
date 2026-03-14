@@ -1,0 +1,131 @@
+{
+  "groupId": "sae-streaming-filter",
+  "testedAt": "2026-03-14T20:15:00Z",
+  "isolation": {
+    "testingSurface": "pytest on CPU (terminal-based)",
+    "repoRoot": "/home/m0hawk/Documents/takkeli",
+    "command": "uv run pytest 01_data_filtering/tests/test_streaming.py -v"
+  },
+  "toolsUsed": ["pytest"],
+  "assertions": [
+    {
+      "id": "VAL-DATA-005",
+      "title": "Streaming pipeline processes chunks",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Run pytest on test_streaming.py with verbose output",
+          "expected": "All TestStreamFilter and TestRunFilterPipelineWithDataset tests pass",
+          "observed": "All 8 TestStreamFilter tests and 6 TestRunFilterPipelineWithDataset tests passed"
+        },
+        {
+          "action": "Verify test_processes_all_chunks_no_drops: pipeline processes all 10 chunks from mock dataset",
+          "expected": "10 results yielded, no drops",
+          "observed": "PASSED - assert len(results) == 10, each result has correct chunk text and pass/fail boolean"
+        },
+        {
+          "action": "Verify test_yields_pass_fail_for_every_chunk: every chunk gets a boolean pass/fail",
+          "expected": "3 results, each with passed is True or False",
+          "observed": "PASSED - all 3 results have boolean passed field"
+        },
+        {
+          "action": "Verify test_pass_rate_with_mixed_chunks: correct pass/fail counts with mixed data",
+          "expected": "6 results, 3 passed, 3 failed",
+          "observed": "PASSED - passed=3, failed=3"
+        },
+        {
+          "action": "Verify test_filtering_correctness_with_patch: high activation chunks are filtered",
+          "expected": "First chunk passes (low activation), second chunk fails (high activation)",
+          "observed": "PASSED - results[0].passed is True, results[1].passed is False"
+        },
+        {
+          "action": "Verify edge cases: empty text, missing text key, max_chunks, empty feature indices",
+          "expected": "All edge case tests pass",
+          "observed": "PASSED - test_empty_text_chunk_passes, test_chunk_without_text_key, test_max_chunks_limits_processing, test_empty_feature_indices_all_pass all passed"
+        }
+      ],
+      "evidence": {
+        "terminalOutput": "evidence/sae-data-filter/sae-streaming-filter/VAL-DATA-005-006-007-pytest-output.txt",
+        "testsRun": [
+          "TestStreamFilter::test_processes_all_chunks_no_drops - PASSED",
+          "TestStreamFilter::test_yields_pass_fail_for_every_chunk - PASSED",
+          "TestStreamFilter::test_empty_text_chunk_passes - PASSED",
+          "TestStreamFilter::test_chunk_without_text_key - PASSED",
+          "TestStreamFilter::test_max_chunks_limits_processing - PASSED",
+          "TestStreamFilter::test_filtering_correctness_with_patch - PASSED",
+          "TestStreamFilter::test_pass_rate_with_mixed_chunks - PASSED",
+          "TestStreamFilter::test_empty_feature_indices_all_pass - PASSED",
+          "TestRunFilterPipelineWithDataset::test_all_chunks_yielded - PASSED",
+          "TestRunFilterPipelineWithDataset::test_stats_track_correctly - PASSED",
+          "TestRunFilterPipelineWithDataset::test_max_chunks_respected - PASSED"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DATA-006",
+      "title": "Filtered dataset pushes to HF Hub",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Verify test_upload_called_for_passing_chunks: mock upload is called with correct params",
+          "expected": "upload_to_hub called with repo_id='user/test-repo', repo_type='dataset', private=True",
+          "observed": "PASSED - mock_upload.called is True, call_args contain correct repo_id, repo_type, and private params"
+        },
+        {
+          "action": "Verify test_no_upload_when_no_repo_specified: no upload when hf_repo_id is None",
+          "expected": "upload_to_hub not called",
+          "observed": "PASSED - assert not mock_upload.called"
+        },
+        {
+          "action": "Verify test_no_upload_when_all_chunks_filtered: no upload when all chunks fail",
+          "expected": "upload_to_hub not called, stats.passed == 0",
+          "observed": "PASSED - mock_upload not called, stats.passed == 0, stats.failed == 2"
+        }
+      ],
+      "evidence": {
+        "terminalOutput": "evidence/sae-data-filter/sae-streaming-filter/VAL-DATA-005-006-007-pytest-output.txt",
+        "testsRun": [
+          "TestRunFilterPipelineWithDataset::test_upload_called_for_passing_chunks - PASSED",
+          "TestRunFilterPipelineWithDataset::test_no_upload_when_no_repo_specified - PASSED",
+          "TestRunFilterPipelineWithDataset::test_no_upload_when_all_chunks_filtered - PASSED"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DATA-007",
+      "title": "No large files in git from data pipeline",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Verify test_no_safetensors_in_repo: git ls-files shows no .safetensors files",
+          "expected": "git ls-files '*.safetensors' returns empty output",
+          "observed": "PASSED - result.stdout.strip() == \"\""
+        },
+        {
+          "action": "Verify test_no_gguf_in_repo: git ls-files shows no .gguf files",
+          "expected": "git ls-files '*.gguf' returns empty output",
+          "observed": "PASSED - result.stdout.strip() == \"\""
+        },
+        {
+          "action": "Verify test_gitignore_excludes_binary_patterns: .gitignore contains required patterns",
+          "expected": ".gitignore contains '*.safetensors' and '*.gguf'",
+          "observed": "PASSED - both patterns found in .gitignore content"
+        }
+      ],
+      "evidence": {
+        "terminalOutput": "evidence/sae-data-filter/sae-streaming-filter/VAL-DATA-005-006-007-pytest-output.txt",
+        "testsRun": [
+          "TestNoLargeFilesInGit::test_no_safetensors_in_repo - PASSED",
+          "TestNoLargeFilesInGit::test_no_gguf_in_repo - PASSED",
+          "TestNoLargeFilesInGit::test_gitignore_excludes_binary_patterns - PASSED"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all 3 passed. VAL-DATA-005 (streaming pipeline processes all chunks) verified with 11 tests covering normal operation, edge cases, and mixed pass/fail scenarios. VAL-DATA-006 (HF Hub upload) verified with 3 tests confirming correct upload calls and proper skip conditions. VAL-DATA-007 (no large files in git) verified with 3 tests confirming no tracked safetensors/gguf files and .gitignore patterns. Total: 28 tests collected, 28 passed in 1.76s."
+}

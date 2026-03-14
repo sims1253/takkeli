@@ -1,0 +1,41 @@
+{
+  "milestone": "sae-data-filter",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-DATA-001",
+    "VAL-DATA-002",
+    "VAL-DATA-003",
+    "VAL-DATA-004",
+    "VAL-DATA-005",
+    "VAL-DATA-006",
+    "VAL-DATA-007",
+    "VAL-DATA-008"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "flowReports": [
+    "sae-data-filter/user-testing/flows/sae-loader-inference.json",
+    "sae-data-filter/user-testing/flows/sae-streaming-filter.json"
+  ],
+  "staticAnalysis": {
+    "tyCheck": { "passed": true, "exitCode": 0 },
+    "ruffCheck": { "passed": true, "exitCode": 0 },
+    "ruffFormatCheck": { "passed": true, "exitCode": 0 }
+  },
+  "pytestSummary": {
+    "totalCollected": 87,
+    "passed": 81,
+    "skipped": 6,
+    "failed": 0,
+    "executionTime": "9.11s"
+  },
+  "previousRound": null
+}
