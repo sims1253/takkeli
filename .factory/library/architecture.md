@@ -57,6 +57,16 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 - Triple-buffer async prefetch between RAM and VRAM
 - Enables 7B+ model fine-tuning on 16GB GPU
 - Critical for staying within 16GB budget during training
+- **Implementation**: `TripleBufferStreamer` cycles 3 global buffer slots across layers. `BufferSlot` holds weights for a specific layer. Thread pool (`ThreadPoolExecutor`) handles async prefetch. On CPU, streaming is a no-op but the API is preserved for GPU deployment.
+
+### Liger Kernels
+- Pure PyTorch implementations match Liger Triton kernel semantics exactly
+- **On CPU**: Uses pure PyTorch fallback (no Triton available)
+- **On GPU**: Can swap in `liger_kernel.transformers.LigerRMSNorm`, etc.
+- API: `liger_rms_norm()`, `liger_rotary_pos_emb()`, `liger_swiglu()`, `LigerRMSNorm`, `LigerSwiGLUMLP`
+- **RMSNorm tolerance**: atol=1e-5 vs reference
+- **RoPE tolerance**: atol=1e-5 vs reference (interleaved formulation)
+- **SwiGLU tolerance**: atol=1e-4 vs reference
 
 ---
 

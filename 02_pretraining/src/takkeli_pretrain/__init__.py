@@ -15,8 +15,8 @@ from takkeli_pretrain.drllm import (
     WindowedPool,
 )
 from takkeli_pretrain.gwt import (
-    GWTOptimizer,
     GWTConfig,
+    GWTOptimizer,
     NorMuonGWT,
     dht_2level,
     dht_forward,
@@ -30,6 +30,23 @@ from takkeli_pretrain.indexcache import (
     get_f_layer_indices,
     get_nearest_f_layer,
     validate_pattern,
+)
+from takkeli_pretrain.lema import (
+    BufferSlot,
+    LEMAConfig,
+    LEMATrainingContext,
+    TripleBufferStreamer,
+    get_layer_params,
+    set_layer_params,
+)
+from takkeli_pretrain.liger_ops import (
+    LigerRMSNorm,
+    LigerSwiGLUMLP,
+    RoPEConfig,
+    liger_apply_rotary_emb,
+    liger_rms_norm,
+    liger_rotary_pos_emb,
+    liger_swiglu,
 )
 from takkeli_pretrain.mla import (
     MLAConfig,
@@ -49,6 +66,16 @@ from takkeli_pretrain.normuon import (
     NorMuonConfig,
     compute_orthogonality_metric,
     newton_schulz_orthogonalize,
+)
+from takkeli_pretrain.training_loop import (
+    LigerAugmentedModel,
+    TrainingConfig,
+    compute_loss,
+    create_lema_context,
+    create_model,
+    create_optimizer,
+    full_training_loop,
+    train_step,
 )
 
 __all__ = [
@@ -88,4 +115,25 @@ __all__ = [
     "GWTConfig",
     "GWTOptimizer",
     "NorMuonGWT",
+    "LigerRMSNorm",
+    "LigerSwiGLUMLP",
+    "RoPEConfig",
+    "liger_apply_rotary_emb",
+    "liger_rotary_pos_emb",
+    "liger_rms_norm",
+    "liger_swiglu",
+    "BufferSlot",
+    "LEMAConfig",
+    "LEMATrainingContext",
+    "TripleBufferStreamer",
+    "get_layer_params",
+    "set_layer_params",
+    "LigerAugmentedModel",
+    "TrainingConfig",
+    "compute_loss",
+    "create_lema_context",
+    "create_model",
+    "create_optimizer",
+    "full_training_loop",
+    "train_step",
 ]
