@@ -1,0 +1,61 @@
+[project]
+name = "takkeli"
+version = "0.1.0"
+description = "Consciousness Filter LLM Training Pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "01_data_filtering",
+    "02_pretraining",
+    "03_alignment",
+    "04_inference_eval",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.14.0",
+    "ty>=0.0.1-alpha.21",
+]
+
+# --- Ruff: linting and formatting ---
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "N",   # pep8-naming
+    "A",   # flake8-builtins
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# --- pytest ---
+
+[tool.pytest.ini_options]
+testpaths = [
+    "01_data_filtering/tests",
+    "02_pretraining/tests",
+    "03_alignment/tests",
+    "04_inference_eval/tests",
+]
+
+# --- Script runner: ty ---
+# ty enforces strict type-checking before execution.
+# Usage:
+#   ty run <script.py>       # type-check then execute
+#   ty check                 # type-check entire workspace

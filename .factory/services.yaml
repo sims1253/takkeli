@@ -1,0 +1,9 @@
+commands:
+  install: uv sync
+  typecheck: ty check
+  lint: ruff check .
+  format_check: ruff format --check .
+  format: ruff format .
+  test: uv run pytest -v
+
+services: {}
