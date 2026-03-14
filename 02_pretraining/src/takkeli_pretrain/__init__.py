@@ -14,6 +14,15 @@ from takkeli_pretrain.drllm import (
     FocalLoss,
     WindowedPool,
 )
+from takkeli_pretrain.gwt import (
+    GWTOptimizer,
+    GWTConfig,
+    NorMuonGWT,
+    dht_2level,
+    dht_forward,
+    dht_inverse,
+    idht_2level,
+)
 from takkeli_pretrain.indexcache import (
     IndexCacheConfig,
     IndexCacheManager,
@@ -72,4 +81,11 @@ __all__ = [
     "NorMuonConfig",
     "compute_orthogonality_metric",
     "newton_schulz_orthogonalize",
+    "dht_forward",
+    "dht_inverse",
+    "dht_2level",
+    "idht_2level",
+    "GWTConfig",
+    "GWTOptimizer",
+    "NorMuonGWT",
 ]
