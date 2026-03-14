@@ -23,7 +23,9 @@ Environment variables, external dependencies, and setup notes.
 - `[tool.uv] dev-dependencies` is **deprecated** — use PEP 735 `[dependency-groups] dev` instead
 - uv workspaces **cannot** have conflicting package indexes for the same dependency across members. Workaround: single index + optional extras + `[tool.uv] conflicts` (see `architecture.md`)
 - Use `tomli` (not `tomllib`) for TOML parsing since `requires-python >=3.10` — `tomllib` is 3.11+ only and `ty` will flag it as unresolved
-- **Tensor power operator**: `ty` flags `tensor ** 2` (unsupported-operator). Use `torch.square(tensor)` instead.
+- **Tensor power operator**: `ty` flags `tensor ** 2` (unsupported-operator). Two workarounds exist: (1) Use `torch.square(tensor)` as a semantic alternative, or (2) add `# type: ignore[operator]` inline comment. The codebase predominantly uses approach (2) as it preserves the original mathematical notation. Workers should use `# type: ignore[operator]` for `Parameter ** int` and `Tensor ** int` expressions, and `# type: ignore[union-attr]` for accessing `.grad` on parameters that may be `None`.
+- **`torch.outer` type inference**: `ty` may flag `torch.outer(tensor, tensor)` with `invalid-argument-type` due to PyTorch stub limitations. Use `# type: ignore[arg-type]` when needed.
+- **`getattr` for model attributes**: When model type is `nn.Module`, accessing custom attributes like `model.blocks` or `model.config.n_layers` triggers `ty` errors. Use `getattr(model, "attr_name", default)` with appropriate type ignores.
 - **`register_buffer` type inference**: `ty` infers `register_buffer` attributes as `Module` type. Currently this does NOT produce errors unless the attributes are explicitly subscripted or passed to strict-typed functions. If errors arise, add explicit annotations like `self.inv_freq: torch.Tensor = ...` after the `register_buffer` call.
 
 ### ROCm Installation

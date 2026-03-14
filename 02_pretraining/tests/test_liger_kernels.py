@@ -36,7 +36,7 @@ def ref_rope(
     seq_len = x.shape[-2]
     inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim))
     t = torch.arange(seq_len, dtype=torch.float32)
-    freqs = torch.outer(t, inv_freq)
+    freqs = torch.outer(t, inv_freq)  # type: ignore[arg-type]
     cos = torch.cat([freqs.cos(), freqs.cos()], dim=-1)
     sin = torch.cat([freqs.sin(), freqs.sin()], dim=-1)
 

@@ -37,16 +37,27 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 
 ## Optimizer Stack
 
+### Convention: In-Place Gradient Mutation
+All optimizers in this stack (NorMuon, NorMuonGWT) mutate `grad` in-place during `step()` using operations like `grad.lerp_()`, `grad.data.mul_()`, etc. This is the standard PyTorch optimizer pattern — grads are consumed once per step and zeroed afterward via `optimizer.zero_grad(set_to_none=True)`. Workers implementing new optimizers should follow this convention.
+
 ### NorMuon
 - Newton-Schulz orthogonalization on 2D weight matrices
 - Row-wise second-order momentum for neuron-wise normalization
 - 21.74% better training efficiency than Adam
+- **Newton-Schulz coefficients**: Uses quintic approximation: `_NS_A=3.4445, _NS_B=-4.7750, _NS_C=2.0315`
+- **Internal computation**: Uses `bfloat16` for orthogonalization stability, converts back to original dtype
+- **1D parameters (biases)**: Fall back to SGD momentum (no orthogonalization)
+- **In-place grad mutation**: `grad.lerp_(momentum, momentum_coeff)` modifies gradient in-place during `step()`. This is by design — grads are consumed once per step.
+- **Momentum shape**: Row-wise second-order momentum has shape `(m, 1)` for `(m, n)` parameters (broadcast along columns)
 
 ### GWT (Gradient Wavelet Transform)
 - 2-level Discrete Haar Wavelet Transform on gradients
 - Discards high-frequency detail coefficients
 - 75% optimizer memory reduction, O(m*n) complexity
 - Wraps NorMuon transparently
+- **Haar normalization**: Uses `1/sqrt(2)` for energy preservation (Parseval's theorem)
+- **Aspect ratio scaling**: In NorMuonGWT, the orthogonalization aspect ratio uses compressed dimensions `(m, n//4)` rather than original `(m, n)`. This means the aspect ratio correction differs from standard NorMuon when compression is active — orthogonalizing happens in compressed space.
+- **GWTOptimizer vs NorMuonGWT**: `GWTOptimizer` is the base wrapper that intercepts and compresses gradients. `NorMuonGWT` is the full composite that adds NorMuon-style orthogonalization in compressed space plus gradient reconstruction.
 
 ### Liger Kernels
 - Triton fused: RMSNorm, RoPE, SwiGLU, CrossEntropy
@@ -58,6 +69,7 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 - Enables 7B+ model fine-tuning on 16GB GPU
 - Critical for staying within 16GB budget during training
 - **Implementation**: `TripleBufferStreamer` cycles 3 global buffer slots across layers. `BufferSlot` holds weights for a specific layer. Thread pool (`ThreadPoolExecutor`) handles async prefetch. On CPU, streaming is a no-op but the API is preserved for GPU deployment.
+- **Prefetch serialization**: `_start_prefetch` calls `result()` on the previous future before submitting a new one, serializing rather than pipelining. On CPU this is irrelevant; on GPU, true overlap would require concurrent buffer slot management.
 
 ### Liger Kernels
 - Pure PyTorch implementations match Liger Triton kernel semantics exactly
@@ -67,6 +79,7 @@ Architectural decisions, patterns, and design choices for the Consciousness Filt
 - **RMSNorm tolerance**: atol=1e-5 vs reference
 - **RoPE tolerance**: atol=1e-5 vs reference (interleaved formulation)
 - **SwiGLU tolerance**: atol=1e-4 vs reference
+- **LigerAugmentedModel**: Currently a pass-through wrapper on CPU — `get_liger_layers()` returns empty list because DrLLMModel uses base `RMSNorm`, not `LigerRMSNorm`. The integration test creates its own model with Liger layers directly. GPU integration path: swap in Liger ops during model construction or via a post-init replacement hook.
 
 ---
 

@@ -1,0 +1,40 @@
+{
+  "featureId": "normuon-optimizer",
+  "milestone": "optimizer-memory-stack",
+  "reviewedAt": "2026-03-14T21:45:00.000Z",
+  "commitId": "c5facb9",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The NorMuon optimizer is well-implemented with correct Newton-Schulz orthogonalization, row-wise second-order momentum tracking, and proper 1D/2D parameter handling. Code is clean, well-documented, and follows project conventions. All 41 tests pass covering orthogonalization quality, momentum shapes, parameter updates, edge cases, and integration. Type annotations are thorough with appropriate type: ignore comments for known PyTorch stub limitations. The implementation fully satisfies VAL-OPT-001, VAL-OPT-002, and VAL-OPT-003.",
+    "issues": [
+      {
+        "severity": "suggestion",
+        "file": "02_pretraining/src/takkeli_pretrain/normuon.py",
+        "line": 216,
+        "description": "The Nesterov look-ahead for 1D parameters uses in-place lerp_ on grad (grad.lerp_(state['momentum'], momentum)). While functional, the in-place mutation of grad could be surprising if grad is reused elsewhere. The 2D path has the same pattern (line 248). This is a minor style concern — in practice PyTorch optimizers commonly mutate grad in-place, and the pattern is safe within step() since grad is consumed once per step."
+      },
+      {
+        "severity": "suggestion",
+        "file": "02_pretraining/src/takkeli_pretrain/normuon.py",
+        "line": 107,
+        "description": "The compute_orthogonality_metric function allocates a full identity matrix (torch.eye) each call. For frequent use during training loops this could be mildly wasteful. This is only a utility/test helper so it's not a concern in practice, but worth noting."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The ty type checker produces info-level diagnostics for the ** operator on tensors (unsupported-operator). Workers add '# type: ignore[operator]' comments to suppress these. This pattern is consistent across the codebase but isn't documented in AGENTS.md. Workers spend time figuring this out on each feature.",
+      "evidence": "test_normuon.py has 22 instances of '# type: ignore[operator]' and 2 of '# type: ignore[union-attr]'. The handoff notes '24 diagnostics (all info-level unsupported-operator for ** on tensors, documented as known ty quirk)'. AGENTS.md says 'All modules must pass ty check' but doesn't mention the common suppressions needed."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The Newton-Schulz coefficients (3.4445, -4.7750, 2.0315) and the bfloat16 internal computation pattern are specific implementation details from the Muon/NorMuon papers. These are correctly implemented and documented in code comments, but the design/llm-tech.md research doc could benefit from recording these exact coefficient values for future reference.",
+      "evidence": "normuon.py lines 51-53 define _NS_A, _NS_B, _NS_C. The worker read design/llm-tech.md during implementation per the transcript skeleton."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The NorMuon optimizer feature is a clean, correct implementation that fully satisfies all three validation assertions (VAL-OPT-001: orthogonality improvement, VAL-OPT-002: row-wise momentum shape tracking, VAL-OPT-003: parameter updates). The Newton-Schulz orthogonalization correctly handles tall, wide, and square matrices with bfloat16 internal computation. Row-wise second-order momentum is properly shaped as (m, 1) for (m, n) parameters. 1D parameters fall back to SGD momentum as specified. 41 comprehensive tests pass. No blocking issues found. Two minor suggestions about in-place grad mutation and identity matrix allocation are non-blocking. The feature is ready."
+}

@@ -135,7 +135,7 @@ def _compute_rope_cache(
     """
     inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim))
     t = torch.arange(offset, offset + seq_len, dtype=torch.float32)
-    freqs = torch.outer(t, inv_freq)  # (seq_len, rotary_dim // 2)
+    freqs = torch.outer(t, inv_freq)  # (seq_len, rotary_dim // 2)  # type: ignore[arg-type]
     # Interleave to full dimension: (seq_len, rotary_dim)
     cos = torch.cat([freqs.cos(), freqs.cos()], dim=-1)
     sin = torch.cat([freqs.sin(), freqs.sin()], dim=-1)
