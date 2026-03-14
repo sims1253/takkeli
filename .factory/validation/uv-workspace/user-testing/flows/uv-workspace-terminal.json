@@ -1,0 +1,52 @@
+{
+  "flowId": "uv-workspace-terminal",
+  "milestone": "uv-workspace",
+  "testingTool": "terminal",
+  "assertionsTested": [
+    "VAL-WORKSPACE-001",
+    "VAL-WORKSPACE-002",
+    "VAL-WORKSPACE-003",
+    "VAL-WORKSPACE-004",
+    "VAL-WORKSPACE-005",
+    "VAL-WORKSPACE-006",
+    "VAL-WORKSPACE-007",
+    "VAL-WORKSPACE-008"
+  ],
+  "results": {
+    "VAL-WORKSPACE-001": {
+      "status": "pass",
+      "evidence": "`uv sync` resolved 200 packages with exit code 0, no ResolveError or NoSuchPackage."
+    },
+    "VAL-WORKSPACE-002": {
+      "status": "pass",
+      "evidence": "Root pyproject.toml [tool.uv.workspace] members array contains exactly 4 entries: 01_data_filtering, 02_pretraining, 03_alignment, 04_inference_eval."
+    },
+    "VAL-WORKSPACE-003": {
+      "status": "pass",
+      "evidence": "`ruff check .` output: 'All checks passed!', exit code 0, no violations."
+    },
+    "VAL-WORKSPACE-004": {
+      "status": "pass",
+      "evidence": "`ruff format --check .` output: '9 files already formatted', exit code 0, no diff output."
+    },
+    "VAL-WORKSPACE-005": {
+      "status": "pass",
+      "evidence": "`ty check` output: 'All checks passed!', exit code 0, no TypeError or IncompatibleType diagnostics."
+    },
+    "VAL-WORKSPACE-006": {
+      "status": "pass",
+      "evidence": "01_data_filtering and 04_inference_eval declare [project.optional-dependencies] rocm with torch. 02_pretraining and 03_alignment declare cuda with torch. No member lists both. torch index URL configured at root level for GPU extras."
+    },
+    "VAL-WORKSPACE-007": {
+      "status": "pass",
+      "evidence": ".gitignore contains *.safetensors, *.gguf, __pycache__/, .venv/, .python-version. `git ls-files '*.safetensors' '*.gguf'` returns empty output."
+    },
+    "VAL-WORKSPACE-008": {
+      "status": "pass",
+      "evidence": "pytest collected 25 items across 4 test modules (01_data_filtering/tests, 02_pretraining/tests, 03_alignment/tests, 04_inference_eval/tests), all 25 passed in 0.03s."
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["uv", "ruff", "ty", "pytest", "git"]
+}
