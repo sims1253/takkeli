@@ -4,10 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
+import tomli as tomllib
 
 
 def test_align_package_exists() -> None:
