@@ -185,9 +185,10 @@ class GWTOptimizer(Optimizer):
         self._inner_optimizer_kwargs = inner_optimizer_kwargs or {}
 
         # Create the inner optimizer first with the raw params.
-        # The inner_optimizer_cls is typed as type[Optimizer], but concrete
-        # optimizers have their own signatures. The kwargs handle this.
-        self.inner: Optimizer = inner_optimizer_cls(list(params), **self._inner_optimizer_kwargs)
+        # Concrete optimizer subclasses accept their own kwargs; cast avoids
+        # the base Optimizer.__init__ signature mismatch with **kwargs.
+        inner_opts: Any = inner_optimizer_cls(list(params), **self._inner_optimizer_kwargs)
+        self.inner: Optimizer = inner_opts
 
         # Now initialize the base Optimizer — the param_groups descriptor
         # won't conflict because we don't override it.

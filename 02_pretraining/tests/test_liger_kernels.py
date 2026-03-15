@@ -34,7 +34,9 @@ def ref_rope(
 ) -> torch.Tensor:
     """Reference PyTorch RoPE (interleaved formulation)."""
     seq_len = x.shape[-2]
-    inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim))
+    inv_freq: torch.Tensor = 1.0 / (
+        base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim)
+    )
     t = torch.arange(seq_len, dtype=torch.float32)
     freqs = torch.outer(t, inv_freq)
     cos = torch.cat([freqs.cos(), freqs.cos()], dim=-1)

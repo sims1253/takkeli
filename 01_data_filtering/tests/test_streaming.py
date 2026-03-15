@@ -8,6 +8,7 @@ Covers validation assertions:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -591,11 +592,12 @@ class TestNoLargeFilesInGit:
         """No .safetensors files should be tracked in git."""
         import subprocess
 
+        repo_root = Path(__file__).resolve().parent.parent.parent
         result = subprocess.run(
             ["git", "ls-files", "*.safetensors"],
             capture_output=True,
             text=True,
-            cwd="/home/m0hawk/Documents/takkeli",
+            cwd=str(repo_root),
         )
         # Should return empty output (no tracked safetensors)
         assert result.stdout.strip() == "", f"Found .safetensors files in git: {result.stdout}"
@@ -604,17 +606,19 @@ class TestNoLargeFilesInGit:
         """No .gguf files should be tracked in git."""
         import subprocess
 
+        repo_root = Path(__file__).resolve().parent.parent.parent
         result = subprocess.run(
             ["git", "ls-files", "*.gguf"],
             capture_output=True,
             text=True,
-            cwd="/home/m0hawk/Documents/takkeli",
+            cwd=str(repo_root),
         )
         assert result.stdout.strip() == "", f"Found .gguf files in git: {result.stdout}"
 
     def test_gitignore_excludes_binary_patterns(self) -> None:
         """.gitignore should exclude .safetensors and .gguf."""
-        gitignore_path = "/home/m0hawk/Documents/takkeli/.gitignore"
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        gitignore_path = repo_root / ".gitignore"
         with open(gitignore_path) as f:
             content = f.read()
 

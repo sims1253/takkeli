@@ -133,7 +133,9 @@ def _compute_rope_cache(
     Returns:
         Tuple of (cos, sin), each of shape (seq_len, rotary_dim).
     """
-    inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim))
+    inv_freq: torch.Tensor = 1.0 / (
+        base ** (torch.arange(0, rotary_dim, 2, dtype=torch.float32) / rotary_dim)
+    )
     t = torch.arange(offset, offset + seq_len, dtype=torch.float32)
     freqs = torch.outer(t, inv_freq)  # (seq_len, rotary_dim // 2)
     # Interleave to full dimension: (seq_len, rotary_dim)

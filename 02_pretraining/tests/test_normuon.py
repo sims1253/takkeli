@@ -173,7 +173,7 @@ class TestNorMuonOrthogonalization:
 
         # Create a simple loss that generates a gradient
         optimizer = NorMuon([weight], lr=0.02, momentum=0.95, beta2=0.95)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -195,7 +195,7 @@ class TestNorMuonOrthogonalization:
 
         # NorMuon step
         opt_n = NorMuon([w_normuon], lr=0.02, momentum=0.95, beta2=0.95)
-        loss = (w_normuon**2).sum()
+        loss = (w_normuon.pow(2)).sum()
         loss.backward()
         opt_n.step()
 
@@ -230,7 +230,7 @@ class TestNorMuonMomentum:
         optimizer = NorMuon([weight], lr=0.02)
 
         # Perform one step to initialize state
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -245,7 +245,7 @@ class TestNorMuonMomentum:
         for m, n in [(16, 32), (32, 16), (128, 256), (256, 128), (512, 512)]:
             weight = nn.Parameter(torch.randn(m, n, device="cpu"))
             optimizer = NorMuon([weight], lr=0.02)
-            loss = (weight**2).sum()
+            loss = (weight.pow(2)).sum()
             loss.backward()
             optimizer.step()
 
@@ -261,7 +261,7 @@ class TestNorMuonMomentum:
         weight = nn.Parameter(torch.randn(64, 128, device="cpu"))
         optimizer = NorMuon([weight], lr=0.02)
 
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -276,13 +276,13 @@ class TestNorMuonMomentum:
         optimizer = NorMuon([weight], lr=0.02)
 
         # First step
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
         v1 = optimizer.state[weight]["row_momentum"].clone()
 
         # Second step
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
         v2 = optimizer.state[weight]["row_momentum"].clone()
@@ -296,7 +296,7 @@ class TestNorMuonMomentum:
         bias = nn.Parameter(torch.randn(64, device="cpu"))
         optimizer = NorMuon([bias], lr=0.02)
 
-        loss = (bias**2).sum()
+        loss = (bias.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -320,7 +320,7 @@ class TestNorMuonUpdates:
         w_before = weight.data.clone()
 
         optimizer = NorMuon([weight], lr=0.02)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -333,7 +333,7 @@ class TestNorMuonUpdates:
         b_before = bias.data.clone()
 
         optimizer = NorMuon([bias], lr=0.02)
-        loss = (bias**2).sum()
+        loss = (bias.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -358,7 +358,7 @@ class TestNorMuonUpdates:
 
         prev = weight.data.clone()
         for _ in range(5):
-            loss = (weight**2).sum()
+            loss = (weight.pow(2)).sum()
             loss.backward()
             optimizer.step()
             curr = weight.data.clone()
@@ -402,7 +402,7 @@ class TestNorMuonParameterGroups:
         w_before = weight.data.clone()
 
         optimizer = NorMuon([weight], lr=0.02, weight_decay=0.1)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -420,12 +420,12 @@ class TestNorMuonParameterGroups:
             [{"params": [w1], "lr": 0.04}, {"params": [w2], "lr": 0.01}],
         )
 
-        loss1 = (w1**2).sum()
+        loss1 = (w1.pow(2)).sum()
         loss1.backward()
         optimizer.step()
 
         # w1 was updated with a different lr than w2
-        loss2 = (w2**2).sum()
+        loss2 = (w2.pow(2)).sum()
         loss2.backward()
         optimizer.step()
 
@@ -442,7 +442,7 @@ class TestNorMuonParameterGroups:
         def closure() -> torch.Tensor:
             nonlocal closure_called
             closure_called = True
-            loss_val = (weight**2).sum()
+            loss_val = (weight.pow(2)).sum()
             loss_val.backward()
             return loss_val
 
@@ -534,7 +534,7 @@ class TestNorMuonEdgeCases:
         w_before = weight.data.clone()
 
         optimizer = NorMuon([weight], lr=0.02)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -552,7 +552,7 @@ class TestNorMuonEdgeCases:
         w_before = weight.data.clone()
 
         optimizer = NorMuon([weight], lr=0.02)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -563,7 +563,7 @@ class TestNorMuonEdgeCases:
         for m, n in [(2, 2), (4, 4), (4, 8)]:
             weight = nn.Parameter(torch.randn(m, n, device="cpu"))
             optimizer = NorMuon([weight], lr=0.02)
-            loss = (weight**2).sum()
+            loss = (weight.pow(2)).sum()
             loss.backward()
             optimizer.step()
 
@@ -576,7 +576,7 @@ class TestNorMuonEdgeCases:
         weight = nn.Parameter(torch.randn(16, 32, device="cpu"))
 
         optimizer = NorMuon([weight], lr=0.02)
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -600,7 +600,7 @@ class TestNorMuonEdgeCases:
         optimizer = NorMuon([weight], lr=0.02)
 
         # Step with non-zero gradient
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -619,7 +619,7 @@ class TestNorMuonEdgeCases:
         weight = nn.Parameter(torch.randn(32, 64, device="cpu"))
         optimizer = NorMuon([weight], lr=0.02)
 
-        loss = (weight**2).sum()
+        loss = (weight.pow(2)).sum()
         loss.backward()
         optimizer.step()
 
@@ -685,7 +685,7 @@ class TestNorMuonIntegration:
 
         losses = []
         for _ in range(10):
-            loss = ((weight - target) ** 2).mean()
+            loss = ((weight - target).pow(2)).mean()
             losses.append(loss.item())
             loss.backward()
             optimizer.step()

@@ -7,6 +7,7 @@ layer via PyTorch forward hooks.
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import torch
@@ -57,13 +58,15 @@ def load_base_model(
     """
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    hf_token = os.environ.get("HF_TOKEN")
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
         torch_dtype=getattr(torch, config.dtype),
+        token=hf_token,
     )
     model.eval()
 
-    tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(config.model_name, token=hf_token)
     if tokenizer is None:
         raise ValueError("Failed to load tokenizer")
     if tokenizer.pad_token is None:
