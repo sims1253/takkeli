@@ -57,7 +57,7 @@ conflicts = [
 # PyTorch wheel index. The generic URL serves CPU-only wheels.
 # For GPU variants, override with --index-url on the CLI:
 #   Local (AMD):  uv sync --extra rocm --index-url https://download.pytorch.org/whl/rocm6.2
-#   Cloud (NVIDIA): uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu130
+#   Cloud (NVIDIA): uv sync --extra cuda --extra-index-url https://download.pytorch.org/whl/cu121
 [[tool.uv.index]]
 name = "pytorch"
 url = "https://download.pytorch.org/whl/"
