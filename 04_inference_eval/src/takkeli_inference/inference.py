@@ -18,6 +18,7 @@ import os
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any, cast
 
 from llama_cpp import Llama
@@ -201,9 +202,8 @@ def load_model(config: InferenceConfig) -> Llama:
         FileNotFoundError: If the model file does not exist.
         RuntimeError: If the model fails to load.
     """
-    import os
-
-    if not os.path.isfile(config.model_path):
+    model_path = Path(config.model_path)
+    if not model_path.is_file():
         raise FileNotFoundError(f"Model file not found: {config.model_path}")
 
     backend = config.backend or detect_backend()
@@ -268,7 +268,11 @@ def generate_text(
 
 
 def generate_tokens(model: Llama, prompt: str, max_tokens: int = 16) -> list[int]:
-    """Generate token IDs from a prompt using the loaded model.
+    """Generate token IDs from a prompt using greedy decoding.
+
+    This is a convenience wrapper for deterministic token generation.
+    Unlike :func:`generate_text`, it always uses greedy decoding
+    (temperature=0) and returns raw token IDs instead of decoded text.
 
     Args:
         model: Loaded Llama model.

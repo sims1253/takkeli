@@ -67,7 +67,6 @@ class BufferSlot:
         self.clear()
         self.layer_idx = layer_idx
         self.device = device
-        # Move all tensors to target device
         self.data = {name: param.detach().to(device) for name, param in weight_dict.items()}
         self.is_ready = True
 

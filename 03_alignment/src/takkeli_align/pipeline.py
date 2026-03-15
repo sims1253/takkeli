@@ -115,6 +115,20 @@ class ReinforcePPPipeline:
 
         return loss
 
+    @staticmethod
+    def _extract_logits(output: object) -> torch.Tensor:
+        """Extract logits tensor from a model output that may be a tuple.
+
+        Args:
+            output: Model forward output (tensor or tuple of (logits, aux)).
+
+        Returns:
+            Logits tensor.
+        """
+        if isinstance(output, tuple):
+            return output[0]
+        return output  # type: ignore[return-value]
+
     @torch.no_grad()
     def generate_reference_logits(
         self,
@@ -129,12 +143,9 @@ class ReinforcePPPipeline:
             Reference logits ``(batch, seq_len, vocab_size)``.
         """
         self.reference_model.eval()
-        # The custom model returns (logits, aux_outputs)
         if hasattr(self.reference_model, "forward"):
             output = self.reference_model(input_ids)
-            if isinstance(output, tuple):
-                return output[0]  # Extract logits from (logits, aux)
-            return output
+            return self._extract_logits(output)
         return self.reference_model(input_ids)
 
     @torch.enable_grad()
@@ -152,9 +163,7 @@ class ReinforcePPPipeline:
         """
         self.policy_model.train()
         output = self.policy_model(input_ids)
-        if isinstance(output, tuple):
-            return output[0]  # Extract logits from (logits, aux)
-        return output
+        return self._extract_logits(output)
 
     def train_step(
         self,

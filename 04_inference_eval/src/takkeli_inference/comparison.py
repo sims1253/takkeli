@@ -150,7 +150,14 @@ def compute_output_stats(entries: list[ComparisonEntry]) -> dict[str, object]:
         Dictionary with comparison statistics.
     """
     if not entries:
-        return {"num_entries": 0}
+        return {
+            "num_entries": 0,
+            "avg_filtered_length": 0.0,
+            "avg_unfiltered_length": 0.0,
+            "avg_length_diff": 0.0,
+            "differing_outputs": 0,
+            "identical_outputs": 0,
+        }
 
     filtered_lengths = [len(e.filtered_output.split()) for e in entries]
     unfiltered_lengths = [len(e.unfiltered_output.split()) for e in entries]

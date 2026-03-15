@@ -12,7 +12,7 @@ critic-free RLHF alignment of the custom 1B Takkeli model.  Key components:
 
 from takkeli_align.config import (
     HardwareConfig,
-    ModelConfig,
+    AlignmentModelConfig,
     OptimizerConfig,
     ReinforcePPConfig,
     ReinforcePPPipelineConfig,
@@ -30,7 +30,7 @@ from takkeli_align.reinforce_pp import (
 __all__ = [
     # Config
     "HardwareConfig",
-    "ModelConfig",
+    "AlignmentModelConfig",
     "OptimizerConfig",
     "ReinforcePPConfig",
     "ReinforcePPPipelineConfig",

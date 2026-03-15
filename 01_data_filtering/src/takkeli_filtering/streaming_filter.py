@@ -205,6 +205,44 @@ def _compute_max_activation(
     return float(selected.max().item())
 
 
+def _upload_chunks(
+    chunks: list[dict[str, Any]],
+    repo_id: str,
+) -> None:
+    """Write chunks to a temporary JSONL file and upload to HuggingFace Hub.
+
+    Args:
+        chunks: List of chunk dicts to upload.
+        repo_id: HuggingFace repository ID.
+    """
+    import json
+    import os
+
+    from takkeli_filtering.hf_transport import upload_to_hub
+
+    if not chunks:
+        return
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".jsonl",
+        delete=False,
+    ) as f:
+        for chunk in chunks:
+            f.write(json.dumps(chunk, ensure_ascii=False) + "\n")
+        tmp_path = Path(f.name)
+
+    try:
+        upload_to_hub(
+            local_path=tmp_path,
+            repo_id=repo_id,
+            repo_type="dataset",
+            private=True,
+        )
+    finally:
+        os.unlink(tmp_path)
+
+
 def run_filter_pipeline(
     config: PipelineConfig,
     hf_repo_id: str,
@@ -227,7 +265,6 @@ def run_filter_pipeline(
     Returns:
         A ``FilterStats`` object with counts of passed/failed chunks.
     """
-    from takkeli_filtering.hf_transport import upload_to_hub
     from takkeli_filtering.sae_loader import load_base_model, load_sae
 
     # Load model components
@@ -263,30 +300,7 @@ def run_filter_pipeline(
         else:
             stats.failed += 1
 
-    # Write passing chunks to a temporary JSONL file and upload to HF Hub
-    if passing_chunks:
-        import json
-
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".jsonl",
-            delete=False,
-        ) as f:
-            for chunk in passing_chunks:
-                f.write(json.dumps(chunk, ensure_ascii=False) + "\n")
-            tmp_path = Path(f.name)
-
-        try:
-            upload_to_hub(
-                local_path=tmp_path,
-                repo_id=hf_repo_id,
-                repo_type="dataset",
-                private=True,
-            )
-        finally:
-            import os
-
-            os.unlink(tmp_path)
+    _upload_chunks(passing_chunks, hf_repo_id)
 
     return stats
 
@@ -337,30 +351,7 @@ def run_filter_pipeline_with_dataset(
             yield result
 
         # Upload passing chunks if a repo is specified
-        if hf_repo_id and passing_chunks:
-            import json
-
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                suffix=".jsonl",
-                delete=False,
-            ) as f:
-                for chunk in passing_chunks:
-                    f.write(json.dumps(chunk, ensure_ascii=False) + "\n")
-                tmp_path = Path(f.name)
-
-            try:
-                from takkeli_filtering.hf_transport import upload_to_hub
-
-                upload_to_hub(
-                    local_path=tmp_path,
-                    repo_id=hf_repo_id,
-                    repo_type="dataset",
-                    private=True,
-                )
-            finally:
-                import os
-
-                os.unlink(tmp_path)
+        if hf_repo_id:
+            _upload_chunks(passing_chunks, hf_repo_id)
 
     return _generator(), stats

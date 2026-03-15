@@ -18,11 +18,14 @@ Usage:
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 import gguf
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 # GGUF constants
 GGUF_MAGIC = 0x46554747  # 'GGUF' in little-endian
@@ -323,9 +326,11 @@ def export_to_gguf(config: ExportConfig) -> Path:
     """
     # Load the state dict
     state_dict = _get_state_dict(config.checkpoint_path)
+    logger.info("Loaded checkpoint from %s", config.checkpoint_path)
 
     # Map tensors to GGUF names and convert formats
     tensors = _map_and_convert_tensors(state_dict, config)
+    logger.info("Mapped %d tensors to GGUF format", len(tensors))
 
     # Create output directory if needed
     output_path = Path(config.output_path)
@@ -363,11 +368,13 @@ def export_to_gguf(config: ExportConfig) -> Path:
     writer.write_tensors_to_file()
     writer.close()
 
+    logger.info("Exported GGUF to %s (%s)", output_path, output_path.stat().st_size)
     return output_path
 
 
 def create_minimal_gguf(
     output_path: str | Path,
+    config: ExportConfig | None = None,
     model_name: str = "takkeli-1b-test",
     context_length: int = 128,
     embedding_dim: int = 64,
@@ -382,8 +389,12 @@ def create_minimal_gguf(
     randomly initialized tensors. Useful for integration testing without
     needing a full trained checkpoint.
 
+    If ``config`` is provided, its fields are used as defaults (overridden
+    by any explicitly passed arguments).
+
     Args:
         output_path: Path where the .gguf file will be written.
+        config: Optional ExportConfig whose fields provide defaults.
         model_name: Model name for metadata.
         context_length: Maximum sequence length.
         embedding_dim: Model hidden dimension.
@@ -395,6 +406,14 @@ def create_minimal_gguf(
     Returns:
         Path to the created .gguf file.
     """
+    if config is not None:
+        model_name = model_name or config.model_name
+        context_length = context_length or config.context_length
+        embedding_dim = embedding_dim or config.embedding_dim
+        vocab_size = vocab_size or config.vocab_size
+        n_layers = n_layers or config.n_layers
+        n_heads = n_heads or config.n_heads
+        d_ffn = d_ffn or config.d_ffn
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
 

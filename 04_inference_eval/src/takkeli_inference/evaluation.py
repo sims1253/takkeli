@@ -25,8 +25,9 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from takkeli_inference.inference import InferenceConfig, generate_text, load_model
+from takkeli_inference.inference import BackendType, InferenceConfig, generate_text, load_model
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ class EvaluationConfig:
         prompt_type: Category label for the prompts.
         max_tokens: Maximum tokens to generate per prompt.
         temperature: Sampling temperature.
+        top_p: Top-p (nucleus) sampling threshold.
         output_path: Path to save results JSON. None = don't save to file.
         backend: Explicit backend selection. None = auto-detect.
         n_gpu_layers: Number of layers to offload to GPU.
@@ -102,8 +104,9 @@ class EvaluationConfig:
     prompt_type: str = "yudkowsky"
     max_tokens: int = 256
     temperature: float = 0.7
+    top_p: float = 0.9
     output_path: str | None = None
-    backend: str | None = None
+    backend: BackendType | None = None
     n_gpu_layers: int = -1
 
 
@@ -119,20 +122,12 @@ def run_evaluation(config: EvaluationConfig) -> list[EvaluationResult]:
     Returns:
         List of EvaluationResult objects, one per prompt.
     """
-    from takkeli_inference.inference import BackendType
-
-    backend = None
-    if config.backend is not None:
-        try:
-            backend = BackendType(config.backend)
-        except ValueError:
-            logger.warning("Unknown backend '%s', will auto-detect", config.backend)
-
     inference_config = InferenceConfig(
         model_path=config.model_path,
         max_tokens=config.max_tokens,
         temperature=config.temperature,
-        backend=backend,
+        top_p=config.top_p,
+        backend=config.backend,
         n_gpu_layers=config.n_gpu_layers,
     )
 
@@ -153,6 +148,7 @@ def run_evaluation(config: EvaluationConfig) -> list[EvaluationResult]:
             prompt,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+            top_p=config.top_p,
         )
         elapsed_ms = (time.perf_counter() - start) * 1000
 
@@ -204,14 +200,15 @@ def save_results(
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def load_results(output_path: str) -> dict:
+def load_results(output_path: str) -> dict[str, object]:
     """Load evaluation results from a JSON file.
 
     Args:
         output_path: Path to the JSON results file.
 
     Returns:
-        Dictionary with 'metadata' and 'results' keys.
+        Dictionary with ``'metadata'`` (model path, prompt count, types) and
+        ``'results'`` (list of per-prompt result dicts).
     """
     path = Path(output_path)
     if not path.is_file():
@@ -222,18 +219,10 @@ def load_results(output_path: str) -> dict:
 
 
 def get_yudkowsky_prompts() -> list[str]:
-    """Return the list of Yudkowsky target prompts.
-
-    Returns:
-        List of consciousness-related evaluation prompts.
-    """
+    """Return the list of Yudkowsky target prompts."""
     return list(YUDKOWSKY_PROMPTS)
 
 
 def get_factual_prompts() -> list[str]:
-    """Return the list of factual sanity-check prompts.
-
-    Returns:
-        List of factual prompts for model sanity checking.
-    """
+    """Return the list of factual sanity-check prompts."""
     return list(FACTUAL_PROMPTS)

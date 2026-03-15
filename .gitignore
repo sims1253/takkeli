@@ -37,3 +37,6 @@ Thumbs.db
 .env
 .env.local
 .factory/
+
+# Desloppify local state
+.desloppify/

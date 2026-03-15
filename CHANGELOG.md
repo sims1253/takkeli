@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.3
+
+- Fix eager evaluation crash in `extract_activations` when accessing `Gemma3Model.layers` (getattr default evaluated even when attribute exists)
+- Fix `EvaluationConfig.backend` type mismatch: `str | None` → `BackendType | None`, eliminating ad-hoc enum conversion
+- Rename `ModelConfig` → `AlignmentModelConfig` in takkeli-align to disambiguate from pretraining's `ModelConfig`
+- Deduplicate upload-to-hub logic in `streaming_filter.py` via extracted `_upload_chunks()` helper
+- Deduplicate logits extraction in `ReinforcePPPipeline` via extracted `_extract_logits()` helper
+- Add `save_json()`, `top_p` field, and docstring fixes across evaluation config
+- Fix `compute_output_stats()` empty-case return shape mismatch in comparison module
+- Fix syntax error in evaluation script (extra closing paren after `--backend` argument)
+- Add re-exports and `__all__` to takkeli-filtering `__init__.py` (was inconsistent with other packages)
+- Add logging to gguf_export.py for export progress tracking
+- Replace `os.path` with `pathlib` in inference module, add missing `Path` import
+- Remove impossible `None` check on `AutoTokenizer.from_pretrained()` return in sae_loader
+- Replace restating comments with WHY comments in normuon optimizer and lema module
+- Inline `self_eps()` type-checker workaround in liger_ops
+- Improve `generate_tokens()` docstring to clarify greedy-only behavior
+- Accept optional `ExportConfig` in `create_minimal_gguf()` to reduce parameter spray
+- Add README.md and LICENSE (MIT) to project root
+
 ## 0.2.2
 
 - Fix SAE release name: `gemma-scope-2-4b-it-resid_post` → `gemma-scope-2-4b-it-res` (correct SAELens registry entry)

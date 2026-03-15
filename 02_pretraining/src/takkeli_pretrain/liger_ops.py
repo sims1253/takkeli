@@ -86,14 +86,9 @@ def liger_rms_norm(
     """
     input_dtype = x.dtype
     x_float = x.float()
-    rms = torch.sqrt(torch.mean(torch.square(x_float), dim=-1, keepdim=True) + self_eps(eps))
+    rms = torch.sqrt(torch.mean(torch.square(x_float), dim=-1, keepdim=True) + eps)
     x_normed = (x_float / rms).to(input_dtype)
     return x_normed * weight
-
-
-def self_eps(eps: float) -> float:
-    """Helper to avoid ty complaints about bare float."""
-    return eps
 
 
 # ---------------------------------------------------------------------------

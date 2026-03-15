@@ -5,6 +5,8 @@ datasets and model checkpoints between local (ROCm) and cloud (CUDA)
 environments via the HuggingFace Hub.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

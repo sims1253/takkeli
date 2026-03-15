@@ -67,8 +67,6 @@ def load_base_model(
     model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(config.model_name, token=hf_token)
-    if tokenizer is None:
-        raise ValueError("Failed to load tokenizer")
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -101,7 +99,10 @@ def extract_activations(
 
     # Access the transformer block – works for Gemma-3, LLaMA, Mistral, etc.
     layers_module = getattr(model, "model", model)
-    layers = getattr(layers_module, "layers", layers_module.layer)
+    try:
+        layers = layers_module.layers
+    except AttributeError:
+        layers = layers_module.layer
     handle = layers[layer].register_forward_hook(_hook_fn)  # type: ignore[arg-type]
 
     with torch.no_grad():

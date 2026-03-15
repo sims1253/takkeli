@@ -232,35 +232,33 @@ class NorMuon(Optimizer):
                     m_buf = state["momentum"]
                     v_buf = state["row_momentum"]
 
-                    # Step 1: Update first-order momentum
+                    # First-order momentum update
                     m_buf.lerp_(grad, 1 - momentum)
 
-                    # Step 2: Nesterov look-ahead
+                    # Nesterov look-ahead: use gradient + projected momentum for more responsive updates
                     update = grad.lerp_(m_buf, momentum) if nesterov else m_buf.clone()
 
-                    # Step 3: Newton-Schulz orthogonalization
+                    # Newton-Schulz orthogonalization: keeps weight matrices well-conditioned
                     update = newton_schulz_orthogonalize(update, steps=ns_steps, eps=eps)
                     update = update.to(grad.dtype)
 
-                    # Step 4-6: Row-wise normalization with norm preservation
+                    # Row-wise second-order tracking: balances per-neuron update magnitudes
                     vnorm = update.norm()
-                    # mean of squared values per row → shape (m, 1)
                     v_mean = (update * update).mean(dim=-1, keepdim=True)
                     v_buf.lerp_(v_mean, 1 - beta2)
 
-                    # Divide each row by sqrt of its second-order statistic
+                    # Normalize by neuron-wise statistics then rescale to preserve total update magnitude
                     step_size = 1.0 / (v_buf.sqrt().add_(eps))
                     update.mul_(step_size)
 
-                    # Rescale to preserve the original update norm
                     vnorm_new = update.norm()
                     update.mul_(vnorm / (vnorm_new + eps))
 
-                    # Step 7: Aspect ratio scaling
+                    # Aspect-ratio scaling: wider matrices need larger updates for isotropic convergence
                     m, n = p.shape
                     update.mul_(max(1.0, m / n) ** 0.5)
 
-                    # Step 8: Apply update
+                    # Decoupled weight decay (if nonzero) + gradient application
                     if weight_decay != 0:
                         p.mul_(1 - lr * weight_decay)
                     p.add_(update, alpha=-lr)

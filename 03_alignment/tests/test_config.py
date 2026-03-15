@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from takkeli_align.config import (
     HardwareConfig,
-    ModelConfig,
+    AlignmentModelConfig,
     OptimizerConfig,
     ReinforcePPConfig,
     ReinforcePPPipelineConfig,
@@ -28,16 +28,16 @@ from takkeli_align.config import (
 # ---------------------------------------------------------------------------
 
 
-class TestModelConfig:
-    """Tests for ModelConfig."""
+class TestAlignmentModelConfig:
+    """Tests for AlignmentModelConfig."""
 
     def test_default_values(self) -> None:
-        cfg = ModelConfig()
+        cfg = AlignmentModelConfig()
         assert cfg.pretrained_model_name_or_path == "takkeli/takkeli-1b"
         assert cfg.max_seq_len == 2048
 
     def test_custom_values(self) -> None:
-        cfg = ModelConfig(
+        cfg = AlignmentModelConfig(
             pretrained_model_name_or_path="custom/model",
             max_seq_len=1024,
         )

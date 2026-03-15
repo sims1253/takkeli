@@ -21,6 +21,7 @@ from takkeli_inference.evaluation import (
     get_yudkowsky_prompts,
     run_evaluation,
 )
+from takkeli_inference.inference import BackendType
 
 
 def main() -> None:
@@ -66,6 +67,12 @@ def main() -> None:
         help="Sampling temperature (default: 0.7)",
     )
     parser.add_argument(
+        "--top-p",
+        type=float,
+        default=0.9,
+        help="Top-p (nucleus) sampling threshold (default: 0.9)",
+    )
+    parser.add_argument(
         "--backend",
         type=str,
         choices=["rocm", "vulkan", "cpu"],
@@ -105,14 +112,17 @@ def main() -> None:
         prompts = get_yudkowsky_prompts() + get_factual_prompts()
         prompt_type = "mixed"
 
+    backend = BackendType(args.backend) if args.backend else None
+
     config = EvaluationConfig(
         model_path=args.model_path,
         prompts=prompts,
         prompt_type=prompt_type,
         max_tokens=args.max_tokens,
         temperature=args.temperature,
+        top_p=args.top_p,
         output_path=args.output,
-        backend=args.backend,
+        backend=backend,
         n_gpu_layers=args.n_gpu_layers,
     )
 

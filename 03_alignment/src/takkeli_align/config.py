@@ -20,7 +20,7 @@ from pathlib import Path
 
 
 @dataclass
-class ModelConfig:
+class AlignmentModelConfig:
     """Policy / reference model configuration.
 
     Attributes:
@@ -180,7 +180,7 @@ class ReinforcePPPipelineConfig:
         use_critic: Whether to instantiate a critic model (must be False).
     """
 
-    model: ModelConfig = field(default_factory=ModelConfig)
+    model: AlignmentModelConfig = field(default_factory=AlignmentModelConfig)
     algorithm: ReinforcePPConfig = field(default_factory=ReinforcePPConfig)
     hardware: HardwareConfig = field(default_factory=HardwareConfig)
     optimizer: OptimizerConfig = field(default_factory=OptimizerConfig)
@@ -208,7 +208,7 @@ class ReinforcePPPipelineConfig:
     def from_dict(cls, d: dict) -> ReinforcePPPipelineConfig:
         """Deserialize config from a plain dictionary."""
         return cls(
-            model=ModelConfig(**d.get("model", {})),
+            model=AlignmentModelConfig(**d.get("model", {})),
             algorithm=ReinforcePPConfig(**d.get("algorithm", {})),
             hardware=HardwareConfig(**d.get("hardware", {})),
             optimizer=OptimizerConfig(**d.get("optimizer", {})),
@@ -231,6 +231,17 @@ class ReinforcePPPipelineConfig:
 
         with open(path, "w") as f:
             yaml.dump(self.to_dict(), f, default_flow_style=False, sort_keys=False)
+
+    def save_json(self, path: Path | str) -> None:
+        """Save config to a JSON file.
+
+        Args:
+            path: Output file path.
+        """
+        import json
+
+        with open(path, "w") as f:
+            json.dump(self.to_dict(), f, indent=2, sort_keys=False)
 
     @classmethod
     def load_yaml(cls, path: Path | str) -> ReinforcePPPipelineConfig:
