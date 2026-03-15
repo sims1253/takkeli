@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Fix SAE release name: `gemma-scope-2-4b-it-resid_post` → `gemma-scope-2-4b-it-res` (correct SAELens registry entry)
+- Fix SAE d_in assertion: 2048 → 2560 (actual Gemma Scope 2 residual dimension for 4B IT)
+
 ## 0.2.1
 
 - Pin sae-lens>=6.30.0 to ensure Gemma Scope 2 registry support

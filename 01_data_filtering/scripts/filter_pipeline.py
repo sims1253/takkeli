@@ -15,7 +15,7 @@ Usage:
 
     # Custom SAE config:
     uv run ty run scripts/filter_pipeline.py \
-        --sae-release "gemma-scope-2-4b-it-resid_post" \
+        --sae-release "gemma-scope-2-4b-it-res" \
         --sae-id "layer_22_width_262k_l0_medium" \
         --hook-layer 22
 """
@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sae-release",
-        default="gemma-scope-2-4b-it-resid_post",
+        default="gemma-scope-2-4b-it-res",
         help="SAE release name.",
     )
     parser.add_argument(

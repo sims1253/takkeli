@@ -15,7 +15,7 @@ class SAEConfig:
 
     Attributes:
         sae_release: HuggingFace repository or SAELens registry release name
-            (e.g., ``"gemma-scope-2-4b-it-resid_post"``).
+            (e.g., ``"gemma-scope-2-4b-it-res"``).
         sae_id: Identifier for the specific SAE within the release
             (e.g., ``"layer_22_width_262k_l0_medium"``).
         hook_layer: Transformer layer index from which to extract activations
@@ -26,7 +26,7 @@ class SAEConfig:
             (e.g., ``"google/gemma-3-4b-it"``).
     """
 
-    sae_release: str = "gemma-scope-2-4b-it-resid_post"
+    sae_release: str = "gemma-scope-2-4b-it-res"
     sae_id: str = "layer_22_width_262k_l0_medium"
     hook_layer: int = 22
     device: str = "cpu"

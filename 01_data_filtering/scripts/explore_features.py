@@ -7,7 +7,7 @@ helps identify candidate feature indices for "consciousness" concepts
 
 Usage:
     uv run ty run scripts/explore_features.py \
-        --sae-release "gemma-scope-2-4b-it-resid_post" \
+        --sae-release "gemma-scope-2-4b-it-res" \
         --sae-id "layer_22_width_262k_l0_medium" \
         --hook-layer 22 \
         --top-k 20 \
@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sae-release",
-        default="gemma-scope-2-4b-it-resid_post",
+        default="gemma-scope-2-4b-it-res",
         help="SAE release name (HuggingFace or SAELens registry).",
     )
     parser.add_argument(

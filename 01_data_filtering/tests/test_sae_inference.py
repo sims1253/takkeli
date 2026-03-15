@@ -117,7 +117,7 @@ class TestSAELoading:
     @pytest.fixture(scope="class")
     def sae_config(self) -> SAEConfig:
         return SAEConfig(
-            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_release="gemma-scope-2-4b-it-res",
             sae_id="layer_22_width_262k_l0_medium",
             hook_layer=22,
             device="cpu",
@@ -140,8 +140,8 @@ class TestSAELoading:
         assert hasattr(loaded_sae.cfg, "d_sae")
         assert loaded_sae.cfg.d_in > 0
         assert loaded_sae.cfg.d_sae > 0
-        # Gemma 3 4B IT has d_model=2048
-        assert loaded_sae.cfg.d_in == 2048
+        # Gemma 3 4B IT SAE d_in=2560
+        assert loaded_sae.cfg.d_in == 2560
 
     def test_sae_has_encoder_weights(self, loaded_sae: Any) -> None:
         """SAE encoder weights should be loadable."""
@@ -163,7 +163,7 @@ class TestSAEInference:
         from takkeli_filtering.sae_loader import load_sae
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_release="gemma-scope-2-4b-it-res",
             sae_id="layer_22_width_262k_l0_medium",
             hook_layer=22,
             device="cpu",
@@ -353,7 +353,7 @@ class TestBaseModelLoading:
         from takkeli_filtering.sae_loader import load_base_model
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_release="gemma-scope-2-4b-it-res",
             sae_id="layer_22_width_262k_l0_medium",
             hook_layer=22,
             device="cpu",
@@ -404,7 +404,7 @@ class TestActivationExtraction:
         from takkeli_filtering.sae_loader import load_base_model
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_release="gemma-scope-2-4b-it-res",
             sae_id="layer_22_width_262k_l0_medium",
             hook_layer=22,
             device="cpu",
@@ -424,7 +424,7 @@ class TestActivationExtraction:
         assert activations.dim() == 3
         assert activations.shape[0] == 1  # batch
         assert activations.shape[1] > 0  # seq_len
-        assert activations.shape[2] == 2048  # d_model for gemma-3-4b-it
+        assert activations.shape[2] == 2560  # d_in for gemma-scope-2-4b-it-res
 
     def test_extract_activations_batch(self, model_and_tokenizer: Any) -> None:
         """Batch extraction should produce correct batch dimension."""
