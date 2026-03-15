@@ -108,6 +108,10 @@ testpaths = [
     "04_inference_eval/tests",
 ]
 
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
 # --- Script runner: ty ---
 # ty enforces strict type-checking before execution.
 # Usage:

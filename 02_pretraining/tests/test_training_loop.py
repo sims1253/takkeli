@@ -137,16 +137,15 @@ class TestTrainingLoopMemory:
         peak_mb = peak / (1024 * 1024)
         assert peak_mb < 500, f"Peak memory {peak_mb:.1f}MB exceeds 500MB budget"
 
-    @pytest.mark.skip(reason="Full 1B model test - runs only when explicitly requested")
+    @pytest.mark.slow
     def test_full_model_memory_budget(self) -> None:
         """Full 1B model training loop fits within 12GB on CPU.
 
         VAL-OPT-012: Full training loop (1B model, batch=1, seq_len=128)
         completes one step with peak RAM < 12GB on CPU.
 
-        This test is skipped by default due to the time required to
-        initialize a 1B parameter model. Run explicitly with:
-            uv run pytest -v -m ''
+        This test is skipped by default. Run with:
+            uv run pytest -v -m slow
             02_pretraining/tests/test_training_loop.py::TestTrainingLoopMemory::test_full_model_memory_budget
         """
         from takkeli_pretrain.model import DrLLMModel, ModelConfig
