@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import tomli as tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 
 def test_data_filtering_package_exists() -> None:

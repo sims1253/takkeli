@@ -15,7 +15,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-import tomli as tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 from takkeli_inference.inference import (
     BackendType,
     InferenceConfig,
