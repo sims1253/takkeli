@@ -148,11 +148,20 @@ class TestTrainingLoopMemory:
             uv run pytest -v -m slow
             02_pretraining/tests/test_training_loop.py::TestTrainingLoopMemory::test_full_model_memory_budget
         """
+        import sys
+        import time
+
+        _log = lambda msg: print(f"\n  [slow test] {msg}", file=sys.stderr, flush=True)
+        _elapsed = lambda t: f"{time.time() - t:.1f}s"
+
+        _log("initializing model config...")
         from takkeli_pretrain.model import DrLLMModel, ModelConfig
         from takkeli_pretrain.training_loop import TrainingConfig, full_training_loop
 
         gc.collect()
         tracemalloc.start()
+
+        t0 = time.time()
 
         # Full 1B model config
         model_config = ModelConfig(
@@ -161,12 +170,14 @@ class TestTrainingLoopMemory:
             n_heads=32,
             n_layers=24,
             d_ffn=5504,
-            enable_routing=False,  # Disable routing for simpler training test
+            enable_routing=False,
             tie_weights=True,
         )
+        _log(f"building 1B model ({_elapsed(t0)} elapsed)...")
         model = DrLLMModel(model_config)
 
         param_count = model.count_parameters()
+        _log(f"model built: {param_count:,} params ({_elapsed(t0)} elapsed)")
         assert 800_000_000 <= param_count <= 1_200_000_000, (
             f"Model has {param_count:,} parameters, outside 800M-1.2B range"
         )
@@ -175,22 +186,26 @@ class TestTrainingLoopMemory:
             batch_size=1,
             seq_len=128,
             lr=0.02,
-            use_lema=False,  # Test without LEMA first
+            use_lema=False,
         )
 
         from takkeli_pretrain.training_loop import create_optimizer
 
+        _log(f"creating optimizer ({_elapsed(t0)} elapsed)...")
         optimizer = create_optimizer(model, training_config)
 
         input_ids = torch.randint(0, 32000, (1, 128))
         targets = input_ids.clone()
 
+        _log(f"running training step ({_elapsed(t0)} elapsed)...")
         metrics = full_training_loop(model, optimizer, input_ids, targets, training_config)
 
+        _log(f"training step done ({_elapsed(t0)} elapsed)")
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
         peak_gb = peak / (1024**3)
+        _log(f"peak memory: {peak_gb:.2f}GB — total: {_elapsed(t0)}")
         assert peak_gb < 12.0, f"Peak memory {peak_gb:.2f}GB exceeds 12GB budget"
         assert metrics["loss"] > 0
 
