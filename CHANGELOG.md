@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- Fix `extract_activations` layer discovery: restructure branch logic to handle edge cases where layer modules lack `__len__` but are valid `torch.nn.Module` instances
+
 ## 0.2.4
 
 - Fix `extract_activations` crash on `Gemma3Model` by navigating `.model.language_model.layers` for multimodal Gemma 3 models

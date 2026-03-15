@@ -4060,7 +4060,7 @@ wheels = [
 
 [[package]]
 name = "takkeli"
-version = "0.2.0"
+version = "0.2.4"
 source = { virtual = "." }
 dependencies = [
     { name = "takkeli-align" },

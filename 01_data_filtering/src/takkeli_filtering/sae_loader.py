@@ -103,16 +103,17 @@ def extract_activations(
     layers_module = getattr(model, "model", model)
     for attr in ("layers", "layer", "language_model"):
         candidate = getattr(layers_module, attr, None)
-        if candidate is not None and hasattr(candidate, "__len__"):
-            if attr == "language_model":
-                # Recurse into the inner language model to find its layers.
-                inner = getattr(candidate, "layers", getattr(candidate, "layer", None))
-                if inner is not None:
-                    layers = inner
-                    break
-            else:
-                layers = candidate
+        if candidate is None:
+            continue
+        if attr == "language_model":
+            # Recurse into the inner language model to find its layers.
+            inner = getattr(candidate, "layers", getattr(candidate, "layer", None))
+            if inner is not None:
+                layers = inner
                 break
+        elif hasattr(candidate, "__len__") or isinstance(candidate, torch.nn.Module):
+            layers = candidate
+            break
     else:
         raise AttributeError(
             f"Cannot find transformer layers on {type(layers_module).__name__}. "
