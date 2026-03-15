@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Pin sae-lens>=6.30.0 to ensure Gemma Scope 2 registry support
+
 ## 0.2.0
 
 - Upgrade SAE data filtering from Gemma 2 2B + Gemma Scope to Gemma 3 4B IT + Gemma Scope 2

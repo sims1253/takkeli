@@ -4060,7 +4060,7 @@ wheels = [
 
 [[package]]
 name = "takkeli"
-version = "0.1.1"
+version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "takkeli-align" },
@@ -4150,7 +4150,7 @@ rocm = [
 requires-dist = [
     { name = "datasets", specifier = ">=2.18.0" },
     { name = "huggingface-hub", specifier = ">=0.23.0" },
-    { name = "sae-lens", specifier = ">=0.4.0" },
+    { name = "sae-lens", specifier = ">=6.30.0" },
     { name = "torch", marker = "extra == 'rocm'", specifier = ">=2.1.0", index = "https://download.pytorch.org/whl/" },
     { name = "transformers", specifier = ">=4.40.0" },
 ]
