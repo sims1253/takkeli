@@ -416,8 +416,10 @@ class TestAlignmentReceivesPretrainedWeights:
 
         # Verify policy model is a valid nn.Module
         assert isinstance(pipeline.policy_model, torch.nn.Module)
-        assert pipeline.policy_model.config.vocab_size == config.vocab_size
-        assert pipeline.policy_model.config.d_model == config.d_model
+        model = pipeline.policy_model
+        assert isinstance(model, torch.nn.Module)
+        assert model.config.vocab_size == config.vocab_size  # type: ignore[union-attr]
+        assert model.config.d_model == config.d_model  # type: ignore[union-attr]
 
     def test_pipeline_creates_frozen_reference(self, tmp_path: Path) -> None:
         """Pipeline creates a frozen reference model from pretrained weights."""

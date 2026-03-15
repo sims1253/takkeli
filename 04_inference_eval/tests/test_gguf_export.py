@@ -250,7 +250,7 @@ class TestGGUFMetadata:
     def _create_and_read(self, tmp_path: Path, **overrides: object) -> dict[str, object]:
         """Helper: create GGUF and return metadata."""
         gguf_path = tmp_path / "test.gguf"
-        create_minimal_gguf(str(gguf_path), **overrides)
+        create_minimal_gguf(str(gguf_path), **overrides)  # type: ignore[arg-type]
         return _get_gguf_metadata(gguf_path)
 
     def test_model_name_present(self, tmp_path: Path) -> None:
@@ -321,9 +321,9 @@ class TestGGUFMetadata:
             embedding_dim=2048,
             vocab_size=32000,
         )
-        assert metadata["bitnet.context_length"] > 0
-        assert metadata["bitnet.embedding_length"] > 0
-        assert metadata["bitnet.vocab_size"] > 0
+        assert int(metadata["bitnet.context_length"]) > 0  # type: ignore[arg-type]
+        assert int(metadata["bitnet.embedding_length"]) > 0  # type: ignore[arg-type]
+        assert int(metadata["bitnet.vocab_size"]) > 0  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------

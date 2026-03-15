@@ -227,8 +227,8 @@ def train_step(
 
     # LEMA pre-step setup
     if lema_context is not None and config.use_lema:
-        blocks = getattr(model, "blocks", [])  # type: ignore[assignment]
-        num_layers = len(blocks)  # type: ignore[arg-type]
+        blocks = getattr(model, "blocks", [])
+        num_layers = len(blocks)
         for layer_idx in range(num_layers):
             lema_context.pre_layer_forward(layer_idx)
 
@@ -261,8 +261,8 @@ def train_step(
 
     # LEMA post-step
     if lema_context is not None and config.use_lema:
-        blocks = getattr(model, "blocks", [])  # type: ignore[assignment]
-        num_layers = len(blocks)  # type: ignore[arg-type]
+        blocks = getattr(model, "blocks", [])
+        num_layers = len(blocks)
         for layer_idx in range(num_layers):
             lema_context.post_layer_forward(layer_idx)
 
@@ -285,8 +285,8 @@ def create_lema_context(
     Returns:
         Initialized LEMATrainingContext.
     """
-    model_config = getattr(model, "config", None)  # type: ignore[assignment]
-    n_layers = getattr(model_config, "n_layers", 1)  # type: ignore[union-attr]
+    model_config = getattr(model, "config", None)
+    n_layers = getattr(model_config, "n_layers", 1)
     lema_config = LEMAConfig(
         num_layers=int(n_layers),
         compute_device=config.lema_compute_device,

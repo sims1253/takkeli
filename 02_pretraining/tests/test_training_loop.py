@@ -51,7 +51,7 @@ class SmallModel(nn.Module):
         self.n_layers = n_layers
         self.vocab_size = vocab_size
         self.config = nn.Module()
-        self.config.n_layers = n_layers
+        self.config.n_layers = n_layers  # type: ignore[assignment]
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
         self.blocks = nn.ModuleList([SmallTransformerBlock(d_model) for _ in range(n_layers)])
@@ -337,7 +337,7 @@ class TestTrainingStackIntegration:
                 self.n_layers = n
                 self.vocab_size = v
                 self.config = nn.Module()
-                self.config.n_layers = n
+                self.config.n_layers = n  # type: ignore[assignment]
                 self.emb = nn.Embedding(v, d)
                 self.blocks = nn.ModuleList([nn.Linear(d, d) for _ in range(n)])
                 self.norm = LigerRMSNorm(d)

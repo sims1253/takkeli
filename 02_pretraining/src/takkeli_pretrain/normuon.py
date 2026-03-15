@@ -154,7 +154,7 @@ class NorMuon(Optimizer):
 
     def __init__(
         self,
-        params: Iterable[torch.nn.Parameter] | list[dict[str, Any]],
+        params: Iterable[torch.Tensor | torch.nn.Parameter] | list[dict[str, Any]],
         lr: float = 0.02,
         momentum: float = 0.95,
         beta2: float = 0.95,

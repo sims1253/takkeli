@@ -42,7 +42,7 @@ class _DummyModel(nn.Module):
         self.n_layers = n_layers
         self.blocks = nn.ModuleList([_DummyTransformerLayer(d_model) for _ in range(n_layers)])
         self.config = nn.Module()  # Dummy config attribute
-        self.config.n_layers = n_layers
+        self.config.n_layers = n_layers  # type: ignore[assignment]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for block in self.blocks:
@@ -410,7 +410,7 @@ class TestLayerParamExtraction:
 
         # Modify weights
         with torch.no_grad():
-            model.blocks[0].linear1.weight.fill_(0.0)
+            model.blocks[0].linear1.weight.fill_(0.0)  # type: ignore[union-attr]
 
         # Restore params
         set_layer_params(model, 0, original_params)

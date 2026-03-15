@@ -64,6 +64,8 @@ def load_base_model(
     model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+    if tokenizer is None:
+        raise ValueError("Failed to load tokenizer")
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 

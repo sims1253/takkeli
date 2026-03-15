@@ -72,6 +72,9 @@ class RotaryPositionEmbedding(nn.Module):
         if dim % 2 != 0:
             raise ValueError(f"RoPE dim must be even, got {dim}")
         self.dim = dim
+        self.inv_freq: torch.Tensor
+        self.cos_cached: torch.Tensor
+        self.sin_cached: torch.Tensor
         inv_freq = 1.0 / (
             base ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim)
         )  # shape (dim//2,)

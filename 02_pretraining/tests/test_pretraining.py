@@ -5,10 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 try:
-    import tomllib
-except ModuleNotFoundError:
-    try:
-    import tomllib
+    import tomllib  # type: ignore[unresolved-import]
 except ModuleNotFoundError:
     import tomli as tomllib
 

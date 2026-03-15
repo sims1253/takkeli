@@ -176,7 +176,7 @@ class GWTOptimizer(Optimizer):
 
     def __init__(
         self,
-        params: Iterable[torch.nn.Parameter] | list[dict[str, Any]],
+        params: Iterable[torch.Tensor | torch.nn.Parameter] | list[dict[str, Any]],
         inner_optimizer_cls: type[Optimizer],
         inner_optimizer_kwargs: dict[str, Any] | None = None,
         levels: int = 2,
@@ -187,9 +187,7 @@ class GWTOptimizer(Optimizer):
         # Create the inner optimizer first with the raw params.
         # The inner_optimizer_cls is typed as type[Optimizer], but concrete
         # optimizers have their own signatures. The kwargs handle this.
-        self.inner: Optimizer = inner_optimizer_cls(  # type: ignore[call-arg]
-            list(params), **self._inner_optimizer_kwargs
-        )
+        self.inner: Optimizer = inner_optimizer_cls(list(params), **self._inner_optimizer_kwargs)
 
         # Now initialize the base Optimizer — the param_groups descriptor
         # won't conflict because we don't override it.
@@ -338,7 +336,7 @@ class NorMuonGWT(Optimizer):
 
     def __init__(
         self,
-        params: Iterable[torch.nn.Parameter] | list[dict[str, Any]],
+        params: Iterable[torch.Tensor | torch.nn.Parameter] | list[dict[str, Any]],
         lr: float = 0.02,
         momentum: float = 0.95,
         beta2: float = 0.95,
