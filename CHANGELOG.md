@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Install torch 2.6.0+cu124 for CUDA 12.2 driver compatibility (RTX 3090)
+- Add `gpu` pytest marker and GPU smoke tests (CUDA availability, tensor ops, pickle round-trip)
+- Add 22 GPU integration tests for SAE data filtering (thresholding, inference shapes, CPU/GPU consistency, streaming pipeline)
+- Update pyproject.toml CUDA index URL to cu124
+
 ## 0.2.5
 
 - Fix `extract_activations` layer discovery: restructure branch logic to handle edge cases where layer modules lack `__len__` but are valid `torch.nn.Module` instances
