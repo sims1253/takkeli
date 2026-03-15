@@ -56,10 +56,10 @@ def load_base_model(
     Returns:
         A ``(model, tokenizer)`` tuple.
     """
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoTokenizer, Gemma3ForConditionalGeneration
 
     hf_token = os.environ.get("HF_TOKEN")
-    model = AutoModelForCausalLM.from_pretrained(
+    model = Gemma3ForConditionalGeneration.from_pretrained(
         config.model_name,
         torch_dtype=getattr(torch, config.dtype),
         token=hf_token,
@@ -99,7 +99,7 @@ def extract_activations(
         hidden: torch.Tensor = output[0] if isinstance(output, tuple) else output  # type: ignore[assignment]
         captured["hidden"] = hidden.detach()
 
-    # Access the transformer block – works for Gemma-2, LLaMA, Mistral, etc.
+    # Access the transformer block – works for Gemma-3, LLaMA, Mistral, etc.
     layers_module = getattr(model, "model", model)
     layers = getattr(layers_module, "layers", layers_module.layer)
     handle = layers[layer].register_forward_hook(_hook_fn)  # type: ignore[arg-type]

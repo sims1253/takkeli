@@ -49,7 +49,7 @@ def _make_mock_tokenizer() -> MagicMock:
 
 
 def _make_extract_activations_patch(
-    activations_shape: tuple[int, ...] = (1, 5, 2304),
+    activations_shape: tuple[int, ...] = (1, 5, 2048),
 ) -> Any:
     """Return a function that patches extract_activations."""
 

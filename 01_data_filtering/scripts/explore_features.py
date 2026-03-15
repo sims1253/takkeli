@@ -7,9 +7,9 @@ helps identify candidate feature indices for "consciousness" concepts
 
 Usage:
     uv run ty run scripts/explore_features.py \
-        --sae-release "gemma-scope-2b-pt-res-canonical" \
-        --sae-id "layer_20/width_16k/canonical" \
-        --hook-layer 20 \
+        --sae-release "gemma-scope-2-4b-it-resid_post" \
+        --sae-id "layer_22_width_262k_l0_medium" \
+        --hook-layer 22 \
         --top-k 20 \
         --num-samples 50
 
@@ -34,23 +34,23 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sae-release",
-        default="gemma-scope-2b-pt-res-canonical",
+        default="gemma-scope-2-4b-it-resid_post",
         help="SAE release name (HuggingFace or SAELens registry).",
     )
     parser.add_argument(
         "--sae-id",
-        default="layer_20/width_16k/canonical",
+        default="layer_22_width_262k_l0_medium",
         help="SAE identifier within the release.",
     )
     parser.add_argument(
         "--hook-layer",
         type=int,
-        default=20,
+        default=22,
         help="Transformer layer for activation extraction.",
     )
     parser.add_argument(
         "--model-name",
-        default="google/gemma-2-2b",
+        default="google/gemma-3-4b-it",
         help="HuggingFace model identifier.",
     )
     parser.add_argument(

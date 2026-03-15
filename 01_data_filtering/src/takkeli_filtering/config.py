@@ -15,23 +15,23 @@ class SAEConfig:
 
     Attributes:
         sae_release: HuggingFace repository or SAELens registry release name
-            (e.g., ``"gemma-scope-2b-pt-res-canonical"``).
+            (e.g., ``"gemma-scope-2-4b-it-resid_post"``).
         sae_id: Identifier for the specific SAE within the release
-            (e.g., ``"layer_20/width_16k/canonical"``).
+            (e.g., ``"layer_22_width_262k_l0_medium"``).
         hook_layer: Transformer layer index from which to extract activations
             for the SAE. Must match the layer encoded in ``sae_id``.
         device: Device for computation (``"cpu"`` for local testing).
         dtype: Floating-point precision for model weights.
         model_name: HuggingFace model identifier for the base ~1B model
-            (e.g., ``"google/gemma-2-2b"``).
+            (e.g., ``"google/gemma-3-4b-it"``).
     """
 
-    sae_release: str = "gemma-scope-2b-pt-res-canonical"
-    sae_id: str = "layer_20/width_16k/canonical"
-    hook_layer: int = 20
+    sae_release: str = "gemma-scope-2-4b-it-resid_post"
+    sae_id: str = "layer_22_width_262k_l0_medium"
+    hook_layer: int = 22
     device: str = "cpu"
     dtype: str = "float32"
-    model_name: str = "google/gemma-2-2b"
+    model_name: str = "google/gemma-3-4b-it"
 
 
 @dataclass(frozen=True)

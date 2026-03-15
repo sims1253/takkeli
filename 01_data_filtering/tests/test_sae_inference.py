@@ -22,7 +22,7 @@ from takkeli_filtering.sae_inference import run_sae_inference, should_filter
 # Skip base model tests when HF_TOKEN is not available (gated model access).
 _skip_no_hf_token = pytest.mark.skipif(
     not os.environ.get("HF_TOKEN"),
-    reason="HF_TOKEN not set; gated Gemma 2 2B model requires authentication",
+    reason="HF_TOKEN not set; gated Gemma 3 4B IT model requires authentication",
 )
 
 # ---------------------------------------------------------------------------
@@ -37,8 +37,8 @@ class TestSAEConfig:
         cfg = SAEConfig()
         assert cfg.device == "cpu"
         assert cfg.dtype == "float32"
-        assert cfg.hook_layer == 20
-        assert cfg.model_name == "google/gemma-2-2b"
+        assert cfg.hook_layer == 22
+        assert cfg.model_name == "google/gemma-3-4b-it"
 
     def test_custom_values(self) -> None:
         cfg = SAEConfig(
@@ -47,7 +47,7 @@ class TestSAEConfig:
             hook_layer=10,
             device="cpu",
             dtype="float32",
-            model_name="google/gemma-2-2b",
+            model_name="google/gemma-3-4b-it",
         )
         assert cfg.sae_release == "custom/repo"
         assert cfg.sae_id == "layer_10/width_16k/canonical"
@@ -117,9 +117,9 @@ class TestSAELoading:
     @pytest.fixture(scope="class")
     def sae_config(self) -> SAEConfig:
         return SAEConfig(
-            sae_release="gemma-scope-2b-pt-res-canonical",
-            sae_id="layer_20/width_16k/canonical",
-            hook_layer=20,
+            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_id="layer_22_width_262k_l0_medium",
+            hook_layer=22,
             device="cpu",
             dtype="float32",
         )
@@ -140,8 +140,8 @@ class TestSAELoading:
         assert hasattr(loaded_sae.cfg, "d_sae")
         assert loaded_sae.cfg.d_in > 0
         assert loaded_sae.cfg.d_sae > 0
-        # Gemma 2 2B has d_model=2304
-        assert loaded_sae.cfg.d_in == 2304
+        # Gemma 3 4B IT has d_model=2048
+        assert loaded_sae.cfg.d_in == 2048
 
     def test_sae_has_encoder_weights(self, loaded_sae: Any) -> None:
         """SAE encoder weights should be loadable."""
@@ -163,9 +163,9 @@ class TestSAEInference:
         from takkeli_filtering.sae_loader import load_sae
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2b-pt-res-canonical",
-            sae_id="layer_20/width_16k/canonical",
-            hook_layer=20,
+            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_id="layer_22_width_262k_l0_medium",
+            hook_layer=22,
             device="cpu",
             dtype="float32",
         )
@@ -353,12 +353,12 @@ class TestBaseModelLoading:
         from takkeli_filtering.sae_loader import load_base_model
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2b-pt-res-canonical",
-            sae_id="layer_20/width_16k/canonical",
-            hook_layer=20,
+            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_id="layer_22_width_262k_l0_medium",
+            hook_layer=22,
             device="cpu",
             dtype="float32",
-            model_name="google/gemma-2-2b",
+            model_name="google/gemma-3-4b-it",
         )
         return load_base_model(cfg)
 
@@ -404,12 +404,12 @@ class TestActivationExtraction:
         from takkeli_filtering.sae_loader import load_base_model
 
         cfg = SAEConfig(
-            sae_release="gemma-scope-2b-pt-res-canonical",
-            sae_id="layer_20/width_16k/canonical",
-            hook_layer=20,
+            sae_release="gemma-scope-2-4b-it-resid_post",
+            sae_id="layer_22_width_262k_l0_medium",
+            hook_layer=22,
             device="cpu",
             dtype="float32",
-            model_name="google/gemma-2-2b",
+            model_name="google/gemma-3-4b-it",
         )
         return load_base_model(cfg)
 
@@ -420,18 +420,18 @@ class TestActivationExtraction:
         """Activations extracted should have shape (batch, seq_len, d_model)."""
         model, tokenizer = model_and_tokenizer
         ids = tokenizer("Hello world", return_tensors="pt")
-        activations = extract_activations_test(model, ids["input_ids"], layer=20)
+        activations = extract_activations_test(model, ids["input_ids"], layer=22)
         assert activations.dim() == 3
         assert activations.shape[0] == 1  # batch
         assert activations.shape[1] > 0  # seq_len
-        assert activations.shape[2] == 2304  # d_model for gemma-2-2b
+        assert activations.shape[2] == 2048  # d_model for gemma-3-4b-it
 
     def test_extract_activations_batch(self, model_and_tokenizer: Any) -> None:
         """Batch extraction should produce correct batch dimension."""
         model, tokenizer = model_and_tokenizer
         texts = ["Hello", "World"]
         ids = tokenizer(texts, return_tensors="pt", padding=True)
-        activations = extract_activations_test(model, ids["input_ids"], layer=20)
+        activations = extract_activations_test(model, ids["input_ids"], layer=22)
         assert activations.shape[0] == 2
 
 
