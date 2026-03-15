@@ -57,10 +57,10 @@ conflicts = [
 # PyTorch wheel index. The generic URL serves CPU-only wheels.
 # For GPU variants, override with --index-url on the CLI:
 #   Local (AMD):  uv sync --extra rocm --index-url https://download.pytorch.org/whl/rocm6.2
-#   Cloud (NVIDIA): uv sync --extra cuda --extra-index-url https://download.pytorch.org/whl/cu121
+#   Cloud (NVIDIA): uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu124
 [[tool.uv.index]]
 name = "pytorch"
-url = "https://download.pytorch.org/whl/"
+url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
 [tool.uv.sources]
@@ -110,6 +110,7 @@ testpaths = [
 
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests that require a CUDA GPU",
 ]
 
 # --- Script runner: ty ---
