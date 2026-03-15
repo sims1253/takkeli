@@ -25,7 +25,6 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from takkeli_inference.inference import BackendType, InferenceConfig, generate_text, load_model
 

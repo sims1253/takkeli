@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+_HF_BASE_URL = "https://huggingface.co"
+
 
 def upload_to_hub(
     local_path: Path,
@@ -56,7 +58,7 @@ def upload_to_hub(
             repo_type=repo_type,
         )
 
-    return f"https://huggingface.co/{repo_id}"
+    return f"{_HF_BASE_URL}/{repo_id}"
 
 
 def download_from_hub(

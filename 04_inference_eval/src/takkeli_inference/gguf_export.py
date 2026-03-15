@@ -21,9 +21,13 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import gguf
 import numpy as np
+
+if TYPE_CHECKING:
+    import torch
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +115,7 @@ def _get_state_dict(checkpoint_path: str) -> dict[str, object]:
     return state_dict
 
 
-def _tensor_to_numpy(param: object) -> np.ndarray:
+def _tensor_to_numpy(param: torch.Tensor | np.ndarray) -> np.ndarray:
     """Convert a PyTorch tensor to a numpy float32 array.
 
     Args:

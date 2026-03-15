@@ -39,6 +39,13 @@ def global_normalize_advantages(
 
     Returns:
         Normalized advantages of the same shape.
+
+    Examples:
+        >>> import torch
+        >>> advantages = torch.tensor([1.0, 2.0, 3.0, 4.0])
+        >>> result = global_normalize_advantages(advantages)
+        >>> abs(result.mean().item()) < 1e-6
+        True
     """
     mean = advantages.mean()
     # Use unbiased=False to avoid the single-element warning from PyTorch.
@@ -212,6 +219,12 @@ def clip_rewards(
 
     Returns:
         Clipped reward tensor of the same shape.
+
+    Examples:
+        >>> import torch
+        >>> rewards = torch.tensor([3.0, 7.0, -10.0])
+        >>> clip_rewards(rewards, clip_range=5.0)
+        tensor([ 3.,  5., -5.])
     """
     return torch.clamp(rewards, min=-clip_range, max=clip_range)
 

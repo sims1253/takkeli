@@ -116,7 +116,7 @@ class ReinforcePPPipeline:
         return loss
 
     @staticmethod
-    def _extract_logits(output: object) -> torch.Tensor:
+    def _extract_logits(output: torch.Tensor | tuple[torch.Tensor, ...]) -> torch.Tensor:
         """Extract logits tensor from a model output that may be a tuple.
 
         Args:
@@ -190,10 +190,10 @@ class ReinforcePPPipeline:
         loss = self.compute_loss(policy_logits, ref_logits, token_ids, rewards)
         return loss
 
-    def state_dict(self) -> dict:
+    def state_dict(self) -> dict[str, torch.Tensor]:
         """Return the policy model state dict for checkpointing."""
         return self.policy_model.state_dict()
 
-    def load_state_dict(self, state_dict: dict) -> None:
+    def load_state_dict(self, state_dict: dict[str, torch.Tensor]) -> None:
         """Load a state dict into the policy model."""
         self.policy_model.load_state_dict(state_dict)

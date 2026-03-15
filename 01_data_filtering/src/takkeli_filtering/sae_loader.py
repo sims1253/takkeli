@@ -98,11 +98,26 @@ def extract_activations(
         captured["hidden"] = hidden.detach()
 
     # Access the transformer block – works for Gemma-3, LLaMA, Mistral, etc.
+    # Gemma3ForConditionalGeneration nests the language model under
+    # .model.language_model, so we need an extra indirection.
     layers_module = getattr(model, "model", model)
-    try:
-        layers = layers_module.layers
-    except AttributeError:
-        layers = layers_module.layer
+    for attr in ("layers", "layer", "language_model"):
+        candidate = getattr(layers_module, attr, None)
+        if candidate is not None and hasattr(candidate, "__len__"):
+            if attr == "language_model":
+                # Recurse into the inner language model to find its layers.
+                inner = getattr(candidate, "layers", getattr(candidate, "layer", None))
+                if inner is not None:
+                    layers = inner
+                    break
+            else:
+                layers = candidate
+                break
+    else:
+        raise AttributeError(
+            f"Cannot find transformer layers on {type(layers_module).__name__}. "
+            f"Expected .layers, .layer, or .language_model.layers"
+        )
     handle = layers[layer].register_forward_hook(_hook_fn)  # type: ignore[arg-type]
 
     with torch.no_grad():

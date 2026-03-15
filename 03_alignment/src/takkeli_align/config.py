@@ -198,24 +198,40 @@ class ReinforcePPPipelineConfig:
     # Serialization helpers
     # ------------------------------------------------------------------
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         """Serialize config to a plain dictionary (nested via dataclasses)."""
         from dataclasses import asdict
 
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict) -> ReinforcePPPipelineConfig:
+    def from_dict(cls, d: dict[str, object]) -> ReinforcePPPipelineConfig:
         """Deserialize config from a plain dictionary."""
+        _model = d.get("model", {})
+        _algo = d.get("algorithm", {})
+        _hw = d.get("hardware", {})
+        _opt = d.get("optimizer", {})
+        model_cfg = (
+            AlignmentModelConfig(**_model)
+            if isinstance(_model, dict)
+            else AlignmentModelConfig()
+        )
+        algo_cfg = (
+            ReinforcePPConfig(**_algo)
+            if isinstance(_algo, dict)
+            else ReinforcePPConfig()
+        )
+        hw_cfg = HardwareConfig(**_hw) if isinstance(_hw, dict) else HardwareConfig()
+        opt_cfg = OptimizerConfig(**_opt) if isinstance(_opt, dict) else OptimizerConfig()
         return cls(
-            model=AlignmentModelConfig(**d.get("model", {})),
-            algorithm=ReinforcePPConfig(**d.get("algorithm", {})),
-            hardware=HardwareConfig(**d.get("hardware", {})),
-            optimizer=OptimizerConfig(**d.get("optimizer", {})),
-            seed=d.get("seed", 42),
-            output_dir=d.get("output_dir", "./output/rlhf"),
-            run_name=d.get("run_name", "reinforcepp"),
-            use_critic=d.get("use_critic", False),
+            model=model_cfg,
+            algorithm=algo_cfg,
+            hardware=hw_cfg,
+            optimizer=opt_cfg,
+            seed=int(d.get("seed", 42)),  # type: ignore[arg-type]
+            output_dir=str(d.get("output_dir", "./output/rlhf")),
+            run_name=str(d.get("run_name", "reinforcepp")),
+            use_critic=bool(d.get("use_critic", False)),
         )
 
     def save_yaml(self, path: Path | str) -> None:

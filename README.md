@@ -23,13 +23,72 @@ Consciousness filter for large language models — a complete training pipeline 
 ## Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/your-org/takkeli.git
+cd takkeli
+
+# Install all packages (CPU-only by default)
 uv sync
+
+# For GPU training, add the appropriate accelerator extra:
+uv sync --extra rocm --index-url https://download.pytorch.org/whl/rocm6.2   # AMD
+uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu130     # NVIDIA
 ```
 
-## Testing
+## Quick Start
+
+### Run tests
 
 ```bash
 uv run pytest
+```
+
+### SAE-based data filtering
+
+```python
+from takkeli_filtering.config import FilterConfig, PipelineConfig, SAEConfig
+from takkeli_filtering.sae_loader import load_sae, load_base_model
+from takkeli_filtering.sae_inference import run_sae_inference, should_filter
+
+# Load model and SAE
+sae = load_sae(SAEConfig())
+model, tokenizer = load_base_model(SAEConfig())
+
+# Check if text should be filtered
+activations = ...  # hidden states from model
+feature_acts = run_sae_inference(sae, activations)
+if should_filter(feature_acts, FilterConfig()):
+    print("Filtered: consciousness concept detected")
+```
+
+### Pretrain with NorMuon + GWT
+
+```python
+from takkeli_pretrain.normuon import NorMuon
+from takkeli_pretrain.gwt import NorMuonGWT
+
+optimizer = NorMuonGWT(model.parameters(), lr=0.02, gwt_levels=2)
+```
+
+### REINFORCE++ alignment
+
+```python
+from takkeli_align.config import ReinforcePPPipelineConfig
+from takkeli_align.pipeline import ReinforcePPPipeline
+
+pipeline = ReinforcePPPipeline(ReinforcePPPipelineConfig(), model)
+loss = pipeline.train_step(input_ids, token_ids, rewards)
+loss.backward()
+```
+
+### Export to GGUF and run inference
+
+```bash
+# Export model
+uv run python -m takkeli_inference.gguf_export --checkpoint checkpoint.pt --output model.gguf
+
+# Run evaluation
+uv run python scripts/evaluation.py --model-path model.gguf
 ```
 
 ## License

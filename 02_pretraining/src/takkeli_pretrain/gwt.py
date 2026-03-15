@@ -69,6 +69,14 @@ def dht_inverse(
 
     Returns:
         Reconstructed tensor of shape (..., n).
+
+    Examples:
+        >>> import torch
+        >>> x = torch.tensor([1.0, 3.0, 5.0, 7.0])
+        >>> approx, detail = dht_forward(x)
+        >>> reconstructed = dht_inverse(approx, detail)
+        >>> torch.allclose(x, reconstructed)
+        True
     """
     inv_sqrt2 = 1.0 / (2.0**0.5)
     x_even = (approximation + detail) * inv_sqrt2

@@ -11,8 +11,8 @@ critic-free RLHF alignment of the custom 1B Takkeli model.  Key components:
 """
 
 from takkeli_align.config import (
-    HardwareConfig,
     AlignmentModelConfig,
+    HardwareConfig,
     OptimizerConfig,
     ReinforcePPConfig,
     ReinforcePPPipelineConfig,

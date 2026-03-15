@@ -16,8 +16,8 @@ from pathlib import Path
 
 import pytest
 from takkeli_align.config import (
-    HardwareConfig,
     AlignmentModelConfig,
+    HardwareConfig,
     OptimizerConfig,
     ReinforcePPConfig,
     ReinforcePPPipelineConfig,

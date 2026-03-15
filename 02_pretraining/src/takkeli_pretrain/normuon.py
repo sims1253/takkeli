@@ -106,6 +106,12 @@ def compute_orthogonality_metric(w: torch.Tensor) -> torch.Tensor:
 
     Returns:
         Scalar Frobenius norm of (W^T W - I).
+
+    Examples:
+        >>> import torch
+        >>> I = torch.eye(3)
+        >>> compute_orthogonality_metric(I).item() < 1e-6
+        True
     """
     assert w.ndim == 2, f"compute_orthogonality_metric requires 2D input, got {w.ndim}D"
     m, n = w.shape
@@ -235,7 +241,8 @@ class NorMuon(Optimizer):
                     # First-order momentum update
                     m_buf.lerp_(grad, 1 - momentum)
 
-                    # Nesterov look-ahead: use gradient + projected momentum for more responsive updates
+                    # Nesterov look-ahead: gradient + projected momentum
+                    # for more responsive updates
                     update = grad.lerp_(m_buf, momentum) if nesterov else m_buf.clone()
 
                     # Newton-Schulz orthogonalization: keeps weight matrices well-conditioned
@@ -247,14 +254,16 @@ class NorMuon(Optimizer):
                     v_mean = (update * update).mean(dim=-1, keepdim=True)
                     v_buf.lerp_(v_mean, 1 - beta2)
 
-                    # Normalize by neuron-wise statistics then rescale to preserve total update magnitude
+                    # Normalize by neuron-wise statistics, then rescale
+                    # to preserve total update magnitude
                     step_size = 1.0 / (v_buf.sqrt().add_(eps))
                     update.mul_(step_size)
 
                     vnorm_new = update.norm()
                     update.mul_(vnorm / (vnorm_new + eps))
 
-                    # Aspect-ratio scaling: wider matrices need larger updates for isotropic convergence
+                    # Aspect-ratio scaling: wider matrices need larger
+                    # updates for isotropic convergence
                     m, n = p.shape
                     update.mul_(max(1.0, m / n) ** 0.5)
 

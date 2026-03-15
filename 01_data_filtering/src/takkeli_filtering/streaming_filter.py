@@ -16,10 +16,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from takkeli_filtering.config import PipelineConfig
+from takkeli_filtering.config import FilterConfig, PipelineConfig
 
 if TYPE_CHECKING:
+    import torch
     from datasets import IterableDataset
+    from sae_lens import SAE
+    from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
 @dataclass(frozen=True)
@@ -90,9 +93,9 @@ def load_streaming_dataset(
 def stream_filter(
     dataset: IterableDataset,
     config: PipelineConfig,
-    tokenizer: Any,
-    model: Any,
-    sae: Any,
+    tokenizer: PreTrainedTokenizerBase,
+    model: PreTrainedModel,
+    sae: SAE,
     max_chunks: int | None = None,
 ) -> Iterator[FilterResult]:
     """Stream through a dataset, applying SAE-based filtering.
@@ -174,8 +177,8 @@ def stream_filter(
 
 
 def _compute_max_activation(
-    feature_acts: Any,
-    config: Any,
+    feature_acts: torch.Tensor,
+    config: FilterConfig,
 ) -> float:
     """Compute the maximum activation value across all monitored features.
 
@@ -308,9 +311,9 @@ def run_filter_pipeline(
 def run_filter_pipeline_with_dataset(
     dataset: IterableDataset,
     config: PipelineConfig,
-    tokenizer: Any,
-    model: Any,
-    sae: Any,
+    tokenizer: PreTrainedTokenizerBase,
+    model: PreTrainedModel,
+    sae: SAE,
     hf_repo_id: str | None = None,
     max_chunks: int | None = None,
 ) -> tuple[Iterator[FilterResult], FilterStats]:

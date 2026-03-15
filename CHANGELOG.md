@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.4
+
+- Fix `extract_activations` crash on `Gemma3Model` by navigating `.model.language_model.layers` for multimodal Gemma 3 models
+- Remove unused `typing.TYPE_CHECKING` and `typing.TypedDict` imports from evaluation module
+- Extract hardcoded HuggingFace Hub base URL to `_HF_BASE_URL` constant in `hf_transport.py`
+- Tighten type annotations: `object` → specific types in `pipeline.py`, `config.py`, `gguf_export.py`, `streaming_filter.py`
+- Fix unsafe `from_dict()` deserialization in `ReinforcePPPipelineConfig` with `isinstance` guards and explicit casts
+- Fix ruff lint errors: long comment lines in `normuon.py`, import sorting in `__init__.py` files
+- Add project classifiers, license field, and PyPI metadata to `pyproject.toml`
+- Add Quick Start section with usage examples for all four pipeline stages to README
+- Update CUDA wheel index URL to `cu130` (vast.ai template)
+- Add doctest examples to `clip_rewards`, `global_normalize_advantages`, `dht_inverse`, `compute_orthogonality_metric`
+
 ## 0.2.3
 
 - Fix eager evaluation crash in `extract_activations` when accessing `Gemma3Model.layers` (getattr default evaluated even when attribute exists)
