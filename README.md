@@ -32,15 +32,39 @@ uv sync
 
 # For GPU training, add the appropriate accelerator extra:
 uv sync --extra rocm --index-url https://download.pytorch.org/whl/rocm6.2   # AMD
-uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu130     # NVIDIA
+uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu124     # NVIDIA
 ```
+
+### GPU Setup
+
+This project targets **CUDA 12.x** (tested with driver 535.x / CUDA 12.2 and torch 2.6.0+cu124).
+
+```bash
+# Verify CUDA is available
+uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')"
+
+# If torch.cuda.is_available() is False, reinstall with the correct CUDA version:
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124 --python .venv/bin/python --reinstall
+```
+
+**Hardware requirements:** NVIDIA GPU with 24GB+ VRAM (RTX 3090 or better recommended).
 
 ## Quick Start
 
 ### Run tests
 
 ```bash
+# All tests (CPU + GPU)
 uv run pytest
+
+# CPU-only tests (skip GPU tests)
+uv run pytest -m "not gpu"
+
+# GPU tests only (requires CUDA)
+uv run pytest -m gpu -v
+
+# Stop on first failure
+uv run pytest -x
 ```
 
 ### SAE-based data filtering
