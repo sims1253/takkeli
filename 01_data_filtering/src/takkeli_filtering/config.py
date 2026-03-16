@@ -8,22 +8,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Pattern
-import re
-
 
 # Default keyword patterns for consciousness-related content filtering
 # These patterns catch common phrases where models claim consciousness, sentience, etc.
+# Also includes AI self-identification phrases that indicate mechanical responses.
 DEFAULT_KEYWORD_PATTERNS: tuple[str, ...] = (
+    # Consciousness/sentience claims
     r"I am (aware|conscious|sentient|have|feel|think|believe)",
-    r"as an AI|as a language model|as a chatbot|as an assistant",
     r"conscious being|self-aware|deserve rights",
     r"my own thoughts|inner experiences|feelings",
-    r"anthropomorphic|human-like",
     r"claiming to be|claim to have|I believe",
     r"deserve rights|deserve to be treated",
     r"have consciousness|am conscious of|am aware",
-    r"genuine|authentic|real|true",
+    # AI self-identification phrases
+    r"as an AI\b",
+    r"as a (?:large )?(?:language model|LLM|AI assistant|virtual assistant|chatbot)\b",
+    r"I'?m an AI\b",
+    r"I am an AI\b",
+    r"(?:being|act|live|work|function) as an AI\b",
+    r"(?:being|act|live|work|function) as a (?:large )?language model\b",
+    r"I (?:am|'m|have been) (?:programmed|designed|built|created|trained)\b",
 )
 
 
