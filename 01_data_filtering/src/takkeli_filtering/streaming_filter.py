@@ -25,6 +25,32 @@ if TYPE_CHECKING:
     from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
+def _parse_conversations(convs: list[Any]) -> list[dict[str, Any]]:
+    """Parse conversation turns, handling both dict and JSON string formats.
+
+    Some datasets (like Step-3.5-Flash-SFT) store conversation turns as
+    JSON strings rather than dicts. This function normalizes them.
+
+    Args:
+        convs: List of conversation turns (dicts or JSON strings).
+
+    Returns:
+        List of parsed dict turns.
+    """
+    import json
+
+    parsed = []
+    for turn in convs:
+        if isinstance(turn, dict):
+            parsed.append(turn)
+        elif isinstance(turn, str):
+            try:
+                parsed.append(json.loads(turn))
+            except (json.JSONDecodeError, TypeError):
+                continue
+    return parsed
+
+
 def extract_text_from_example(example: dict[str, Any], config: FilterConfig) -> str:
     """Extract text from a dataset example based on config.
 
@@ -51,10 +77,9 @@ def extract_text_from_example(example: dict[str, Any], config: FilterConfig) -> 
         convs = example.get(config.conversations_field, [])
         if not isinstance(convs, list):
             return ""
+        convs = _parse_conversations(convs)
         parts = []
         for turn in convs:
-            if not isinstance(turn, dict):
-                continue
             role = turn.get("role", "")
             content = turn.get("content", "")
             parts.append(f"<{role}>: {content}")
@@ -65,10 +90,11 @@ def extract_text_from_example(example: dict[str, Any], config: FilterConfig) -> 
         convs = example.get(config.conversations_field, [])
         if not isinstance(convs, list):
             return ""
+        convs = _parse_conversations(convs)
         parts = [
             turn.get("content", "")
             for turn in convs
-            if isinstance(turn, dict) and turn.get("role") == "assistant"
+            if turn.get("role") == "assistant"
         ]
         return "\n".join(parts)
 
@@ -77,10 +103,10 @@ def extract_text_from_example(example: dict[str, Any], config: FilterConfig) -> 
         convs = example.get(config.conversations_field, [])
         if not isinstance(convs, list):
             return ""
+        convs = _parse_conversations(convs)
         return "\n".join(
             turn.get("content", "")
             for turn in convs
-            if isinstance(turn, dict)
         )
 
     else:
