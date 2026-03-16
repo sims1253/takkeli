@@ -3,6 +3,14 @@
 Processes FineWeb-Edu dataset through SAE-based consciousness filter,
 pushing cleaned dataset to a private HuggingFace repository.
 
+Filtering Strategy:
+    1. KEYWORD PRE-FILTERING (fast): Text is checked against regex patterns.
+       If any pattern matches (in "any" mode), the chunk is filtered out
+       immediately, skipping expensive SAE inference.
+    2. SAE-BASED FILTERING (slow): If keyword filtering passes AND feature
+       indices are configured, the chunk is processed through the SAE to
+       detect consciousness-related activations.
+
 Usage:
     # Dry run with 100 chunks (no upload):
     uv run ty run scripts/filter_pipeline.py --max-chunks 100 --dry-run
@@ -12,6 +20,11 @@ Usage:
         --repo-id "username/takkeli-filtered-fineweb" \
         --feature-indices 42 1337 9876 \
         --threshold 0.5
+
+    # Keyword-only filtering (no SAE):
+    uv run ty run scripts/filter_pipeline.py \
+        --max-chunks 100 \
+        --dry-run
 
     # Custom SAE config:
     uv run ty run scripts/filter_pipeline.py \
@@ -29,7 +42,22 @@ import sys
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run SAE streaming filter on FineWeb-Edu dataset.",
+        description="Run SAE streaming filter on FineWeb-Edu dataset with keyword pre-filtering.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Keyword-only filtering (fast):
+  %(prog)s --max-chunks 100 --dry-run
+
+  # SAE + keyword filtering:
+  %(prog)s --feature-indices 42 1337 --threshold 0.5 --device cuda
+
+  # Disable keyword filtering:
+  %(prog)s --no-keywords --feature-indices 42 1337
+
+  # Custom keywords:
+  %(prog)s --keywords "pattern1" "pattern2" --keyword-mode any
+""",
     )
     parser.add_argument(
         "--repo-id",
@@ -72,13 +100,13 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         type=int,
         default=[],
-        help="SAE feature indices to monitor.",
+        help="SAE feature indices to monitor. If empty, only keyword filtering is applied.",
     )
     parser.add_argument(
         "--threshold",
         type=float,
         default=0.5,
-        help="Activation threshold for filtering.",
+        help="Activation threshold for SAE filtering.",
     )
     parser.add_argument(
         "--max-chunks",
@@ -107,6 +135,24 @@ def parse_args() -> argparse.Namespace:
         default="text",
         help="Text extraction mode (default: text).",
     )
+    # Keyword filtering options
+    parser.add_argument(
+        "--no-keywords",
+        action="store_true",
+        help="Disable keyword pre-filtering (use only SAE filtering).",
+    )
+    parser.add_argument(
+        "--keywords",
+        nargs="+",
+        default=None,
+        help="Custom keyword regex patterns (default: built-in consciousness patterns).",
+    )
+    parser.add_argument(
+        "--keyword-mode",
+        choices=["any", "all"],
+        default="any",
+        help="Keyword match mode: 'any' filters if any pattern matches, 'all' requires all patterns (default: any).",
+    )
     return parser.parse_args()
 
 
@@ -114,12 +160,25 @@ def main() -> None:
     """Main entry point for the streaming filter pipeline."""
     args = parse_args()
 
-    from takkeli_filtering.config import FilterConfig, PipelineConfig, SAEConfig
+    from takkeli_filtering.config import (
+        DEFAULT_KEYWORD_PATTERNS,
+        FilterConfig,
+        PipelineConfig,
+        SAEConfig,
+    )
     from takkeli_filtering.sae_loader import load_base_model, load_sae
     from takkeli_filtering.streaming_filter import (
         load_streaming_dataset,
         run_filter_pipeline_with_dataset,
     )
+
+    # Determine keyword patterns
+    if args.no_keywords:
+        keyword_patterns = ()
+    elif args.keywords:
+        keyword_patterns = tuple(args.keywords)
+    else:
+        keyword_patterns = DEFAULT_KEYWORD_PATTERNS
 
     # Build config
     config = PipelineConfig(
@@ -137,6 +196,8 @@ def main() -> None:
             text_field=args.text_field,
             conversations_field=args.conversations_field,
             extract_mode=args.extract_mode,
+            keyword_patterns=keyword_patterns,
+            keyword_mode=args.keyword_mode,
         ),
         batch_size=1,
     )
@@ -144,8 +205,9 @@ def main() -> None:
     print("=== SAE Streaming Filter Pipeline ===", file=sys.stderr)
     print(f"SAE: {args.sae_release} / {args.sae_id}", file=sys.stderr)
     print(f"Model: {args.model_name}", file=sys.stderr)
-    print(f"Feature indices: {args.feature_indices or '(none - all pass)'}", file=sys.stderr)
+    print(f"Feature indices: {args.feature_indices or '(none - keyword filtering only)'}", file=sys.stderr)
     print(f"Threshold: {args.threshold}", file=sys.stderr)
+    print(f"Keyword patterns: {len(keyword_patterns)} patterns ({args.keyword_mode} mode)", file=sys.stderr)
     print(f"Max chunks: {args.max_chunks or 'unlimited'}", file=sys.stderr)
     print(f"Dry run: {args.dry_run}", file=sys.stderr)
     print(f"Text field: {args.text_field}", file=sys.stderr)
@@ -192,6 +254,8 @@ def main() -> None:
     print(f"Total chunks:   {stats.total}", file=sys.stderr)
     print(f"Passed:         {stats.passed}", file=sys.stderr)
     print(f"Filtered out:   {stats.failed}", file=sys.stderr)
+    print(f"  - Keyword:    {stats.keyword_filtered}", file=sys.stderr)
+    print(f"  - SAE:        {stats.sae_filtered}", file=sys.stderr)
     print(f"Pass rate:      {stats.pass_rate:.2%}", file=sys.stderr)
 
     if not args.dry_run and stats.passed > 0:

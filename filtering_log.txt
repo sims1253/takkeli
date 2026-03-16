@@ -1,0 +1,22 @@
+SAE filtering pipeline
+  device:       cuda
+  dtype:        bfloat16
+  features:     (none — passthrough)
+  threshold:    0.0
+  input repo:   stepfun-ai/Step-3.5-Flash-SFT
+  output repo:  m0hawk/step-3.5-flash-sft-filtered
+  max chunks:   100000
+  text field:   text
+  conv field:   conversations
+  extract mode: conversations_concat
+
+Loading SAE...
+Loading base model and tokenizer...
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 20262.34it/s]
+Loading weights:   0%|          | 0/883 [00:00<?, ?it/s]Loading weights:  78%|███████▊  | 693/883 [00:00<00:00, 6885.03it/s]Loading weights: 100%|██████████| 883/883 [00:00<00:00, 7011.96it/s]
+Loading streaming dataset...
+Starting filter pipeline...
+
+  chunk    100 | pass    100 | fail      0 | rate 100.0% | max_act    0.000 | 1.0 chunks/s
+  chunk    200 | pass    200 | fail      0 | rate 100.0% | max_act    0.000 | 1.6 chunks/s
+  chunk    300 | pass    300 | fail      0 | rate 100.0% | max_act    0.000 | 2.0 chunks/s

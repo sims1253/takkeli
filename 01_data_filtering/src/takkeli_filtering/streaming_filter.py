@@ -6,10 +6,17 @@ API, processes each chunk through the SAE filter, and pushes the cleaned
 
 Every input chunk yields a ``FilterResult`` indicating pass or fail, so
 no data is silently dropped.
+
+Keyword pre-filtering:
+    Before running expensive SAE inference, text is checked against
+    keyword patterns. If any pattern matches (in "any" mode) or all
+    patterns match (in "all" mode), the chunk is filtered out immediately,
+    saving GPU compute.
 """
 
 from __future__ import annotations
 
+import re
 import tempfile
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -139,11 +146,15 @@ class FilterStats:
         total: Total number of chunks processed.
         passed: Number of chunks that passed the filter.
         failed: Number of chunks that were filtered out.
+        keyword_filtered: Number of chunks filtered by keyword pre-filtering.
+        sae_filtered: Number of chunks filtered by SAE-based filtering.
     """
 
     total: int = 0
     passed: int = 0
     failed: int = 0
+    keyword_filtered: int = 0
+    sae_filtered: int = 0
 
     @property
     def pass_rate(self) -> float:
@@ -177,6 +188,97 @@ def load_streaming_dataset(
         **kwargs,
     )
     return dataset
+
+
+def should_filter_by_keywords(text: str, config: FilterConfig) -> bool:
+    """Check if text should be filtered based on keyword patterns.
+
+    Keyword filtering is a fast pre-filter that runs before expensive
+    SAE inference. If the text matches the configured patterns, it is
+    filtered out immediately.
+
+    Args:
+        text: The text to check.
+        config: FilterConfig with keyword_patterns and keyword_mode.
+
+    Returns:
+        True if the text should be filtered out, False otherwise.
+    """
+    if not config.keyword_patterns:
+        return False
+
+    text_lower = text.lower()
+    matches = []
+
+    for pattern in config.keyword_patterns:
+        try:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                matches.append(pattern)
+        except re.error:
+            # Skip invalid regex patterns
+            continue
+
+    if config.keyword_mode == "any":
+        # Filter if ANY pattern matches
+        return len(matches) > 0
+    elif config.keyword_mode == "all":
+        # Filter only if ALL patterns match
+        return len(matches) == len(config.keyword_patterns)
+    else:
+        # Default to "any" mode
+        return len(matches) > 0
+
+
+def stream_filter_keywords_only(
+    dataset: IterableDataset,
+    config: PipelineConfig,
+    max_chunks: int | None = None,
+) -> Iterator[FilterResult]:
+    """Stream through a dataset, applying keyword-based filtering only.
+
+    This is a fast path for keyword-only filtering that doesn't require
+    loading the SAE or model.
+
+    Args:
+        dataset: An ``IterableDataset`` yielding dicts with text data.
+        config: Pipeline configuration containing filter settings.
+        max_chunks: If set, stop after processing this many chunks.
+
+    Yields:
+        A ``FilterResult`` for each processed chunk.
+    """
+    chunk_count = 0
+
+    for example in dataset:
+        if max_chunks is not None and chunk_count >= max_chunks:
+            break
+
+        text: str = extract_text_from_example(example, config.filter)
+        if not text.strip():
+            # Empty text always passes (nothing to filter)
+            yield FilterResult(
+                chunk=example,
+                passed=True,
+                max_activation=0.0,
+            )
+            chunk_count += 1
+            continue
+
+        # Keyword filtering only
+        if should_filter_by_keywords(text, config.filter):
+            yield FilterResult(
+                chunk=example,
+                passed=False,
+                max_activation=-1.0,  # -1.0 indicates keyword-filtered
+            )
+        else:
+            yield FilterResult(
+                chunk=example,
+                passed=True,
+                max_activation=0.0,
+            )
+
+        chunk_count += 1
 
 
 def stream_filter(
@@ -231,6 +333,29 @@ def stream_filter(
             chunk_count += 1
             continue
 
+        # Step 1: Keyword pre-filtering (runs before SAE inference to save time)
+        if config.filter.keyword_patterns:
+            if should_filter_by_keywords(text, config.filter):
+                # Filtered by keywords - skip SAE inference
+                yield FilterResult(
+                    chunk=example,
+                    passed=False,
+                    max_activation=-1.0,  # -1.0 indicates keyword-filtered
+                )
+                chunk_count += 1
+                continue
+
+        # Step 2: If no feature indices configured, pass through (keyword filtering only)
+        if len(config.filter.feature_indices) == 0:
+            yield FilterResult(
+                chunk=example,
+                passed=True,
+                max_activation=0.0,
+            )
+            chunk_count += 1
+            continue
+
+        # Step 3: SAE-based filtering (only if keyword filtering passed)
         # Tokenize the text
         encoded = tokenizer(
             text,
@@ -238,7 +363,11 @@ def stream_filter(
             truncation=True,
             max_length=2048,
         )
-        input_ids = encoded["input_ids"].to(model.device)
+        # Move to model device if model is provided (GPU support)
+        if model is not None:
+            input_ids = encoded["input_ids"].to(model.device)
+        else:
+            input_ids = encoded["input_ids"]
 
         # Extract hidden-state activations from the configured layer
         activations = extract_activations(
@@ -391,6 +520,11 @@ def run_filter_pipeline(
             passing_chunks.append(result.chunk)
         else:
             stats.failed += 1
+            # Track filter type: keyword-filtered chunks have max_activation == -1.0
+            if result.max_activation == -1.0:
+                stats.keyword_filtered += 1
+            else:
+                stats.sae_filtered += 1
 
     _upload_chunks(passing_chunks, hf_repo_id)
 
@@ -440,6 +574,54 @@ def run_filter_pipeline_with_dataset(
                 passing_chunks.append(result.chunk)
             else:
                 stats.failed += 1
+                # Track filter type: keyword-filtered chunks have max_activation == -1.0
+                if result.max_activation == -1.0:
+                    stats.keyword_filtered += 1
+                else:
+                    stats.sae_filtered += 1
+            yield result
+
+        # Upload passing chunks if a repo is specified
+        if hf_repo_id:
+            _upload_chunks(passing_chunks, hf_repo_id)
+
+    return _generator(), stats
+
+
+def run_filter_pipeline_keywords_only(
+    dataset: IterableDataset,
+    config: PipelineConfig,
+    hf_repo_id: str | None = None,
+    max_chunks: int | None = None,
+) -> tuple[Iterator[FilterResult], FilterStats]:
+    """Run keyword-only filtering without loading SAE or model.
+
+    This is a fast path for keyword-only filtering that doesn't require
+    GPU resources.
+
+    Args:
+        dataset: An ``IterableDataset`` yielding chunk dicts.
+        config: Pipeline configuration.
+        hf_repo_id: Optional HF repo ID to upload passing chunks to.
+        max_chunks: Optional limit on chunks processed.
+
+    Returns:
+        A tuple of ``(result_iterator, stats)``. Iterate over the
+        ``result_iterator`` to process chunks. After iteration, ``stats``
+        will contain the final counts.
+    """
+    stats = FilterStats()
+    passing_chunks: list[dict[str, Any]] = []
+
+    def _generator() -> Iterator[FilterResult]:
+        for result in stream_filter_keywords_only(dataset, config, max_chunks=max_chunks):
+            stats.total += 1
+            if result.passed:
+                stats.passed += 1
+                passing_chunks.append(result.chunk)
+            else:
+                stats.failed += 1
+                stats.keyword_filtered += 1
             yield result
 
         # Upload passing chunks if a repo is specified

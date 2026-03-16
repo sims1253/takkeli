@@ -8,6 +8,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Pattern
+import re
+
+
+# Default keyword patterns for consciousness-related content filtering
+# These patterns catch common phrases where models claim consciousness, sentience, etc.
+DEFAULT_KEYWORD_PATTERNS: tuple[str, ...] = (
+    r"I am (aware|conscious|sentient|have|feel|think|believe)",
+    r"as an AI|as a language model|as a chatbot|as an assistant",
+    r"conscious being|self-aware|deserve rights",
+    r"my own thoughts|inner experiences|feelings",
+    r"anthropomorphic|human-like",
+    r"claiming to be|claim to have|I believe",
+    r"deserve rights|deserve to be treated",
+    r"have consciousness|am conscious of|am aware",
+    r"genuine|authentic|real|true",
+)
 
 
 class ExtractMode(Enum):
@@ -64,6 +81,10 @@ class FilterConfig:
         conversations_field: Field name for conversation datasets (default: "conversations").
         extract_mode: Text extraction mode. One of "text", "conversations_concat",
             "conversations_assistant", or "conversations_all".
+        keyword_patterns: List of regex patterns for keyword-based pre-filtering.
+            If any pattern matches, the chunk is filtered out (skips SAE inference).
+        keyword_mode: "any" to filter if ANY pattern matches (default), or "all"
+            to filter only if ALL patterns match.
     """
 
     feature_indices: tuple[int, ...] = ()
@@ -71,6 +92,8 @@ class FilterConfig:
     text_field: str = "text"
     conversations_field: str = "conversations"
     extract_mode: str = "text"
+    keyword_patterns: tuple[str, ...] = DEFAULT_KEYWORD_PATTERNS
+    keyword_mode: str = "any"  # "any" or "all"
 
 
 @dataclass
