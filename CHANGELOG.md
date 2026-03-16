@@ -5,6 +5,10 @@
 - Install torch 2.6.0+cu124 for CUDA 12.2 driver compatibility (RTX 3090)
 - Add `gpu` pytest marker and GPU smoke tests (CUDA availability, tensor ops, pickle round-trip)
 - Add 22 GPU integration tests for SAE data filtering (thresholding, inference shapes, CPU/GPU consistency, streaming pipeline)
+- Add 12 GPU integration tests for pretraining (model creation, forward pass, NorMuon, GWT, training loop, checkpoint round-trip, Liger kernels)
+- Add 14 GPU integration tests for REINFORCE++ alignment (pipeline on GPU, frozen reference, train_step, loss stability, state dict round-trip, algorithm functions)
+- Add 24 GPU integration tests for GGUF export/inference (checkpoint export, ternary fidelity, metadata, backend detection, evaluation, comparison)
+- Add 6 end-to-end integration tests (pretrain→GGUF, pretrain→align, align→export, filter→pretrain data flow, full pipeline smoke)
 - Update pyproject.toml CUDA index URL to cu124
 
 ## 0.2.5
