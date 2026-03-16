@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2
+
+- Add AI self-identification patterns to consciousness filter
+- Remove overly broad regex patterns (9 improved patterns total)
+- Enhanced pattern precision for reduced false positives
+
 ## 0.4.1
 
 - Keyword-based consciousness filtering (9 patterns, ~40% filter rate)

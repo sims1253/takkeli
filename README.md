@@ -2,6 +2,18 @@
 
 Consciousness filter for large language models — a complete training pipeline for a custom 1B-parameter model with BitNet b1.58 ternary weights, Multi-head Latent Attention (MLA), and Dr.LLM routing.
 
+## Project Status
+
+| Component | Status |
+|-----------|--------|
+| Keyword filtering | ✅ Working (9 patterns, tested on 10K chunks) |
+| SAE-based filtering | ✅ Working (Gemma Scope 2) |
+| Pretraining pipeline | ✅ Verified on GPU (640+ tests passing) |
+| REINFORCE++ alignment | ✅ Verified on GPU |
+| GGUF export/inference | ✅ Verified on GPU |
+
+**Filtered dataset available:** [m0hawk/step-3.5-flash-sft-filtered](https://huggingface.co/datasets/m0hawk/step-3.5-flash-sft-filtered) on HuggingFace Hub (61% pass rate after keyword filtering)
+
 ## Pipeline Stages
 
 | Stage | Package | Description |
@@ -39,6 +51,8 @@ uv sync --extra cuda --index-url https://download.pytorch.org/whl/cu124     # NV
 
 This project targets **CUDA 12.x** (tested with driver 535.x / CUDA 12.2 and torch 2.6.0+cu124).
 
+**Requirements:** NVIDIA GPU with **24GB+ VRAM** (RTX 3090 or better recommended).
+
 ```bash
 # Verify CUDA is available
 uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')"
@@ -46,8 +60,6 @@ uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Devic
 # If torch.cuda.is_available() is False, reinstall with the correct CUDA version:
 uv pip install torch --index-url https://download.pytorch.org/whl/cu124 --python .venv/bin/python --reinstall
 ```
-
-**Hardware requirements:** NVIDIA GPU with 24GB+ VRAM (RTX 3090 or better recommended).
 
 ## Quick Start
 
@@ -67,7 +79,22 @@ uv run pytest -m gpu -v
 uv run pytest -x
 ```
 
-### SAE-based data filtering
+### Data filtering
+
+Two filtering modes are available:
+
+#### Keyword-based filtering (recommended)
+
+```python
+from takkeli_filtering.keyword_filter import KeywordFilter
+
+# 9 patterns targeting consciousness/self-awareness concepts
+filter = KeywordFilter()
+if filter.should_filter("I am an AI language model..."):
+    print("Filtered: AI self-identification detected")
+```
+
+#### SAE-based filtering
 
 ```python
 from takkeli_filtering.config import FilterConfig, PipelineConfig, SAEConfig
