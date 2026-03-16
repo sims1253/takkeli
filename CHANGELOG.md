@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- Full training pipeline verified working on GPU (RTX 3090, 24GB VRAM)
+- Add scripts/test_pretraining_gpu.py: DrLLMModel + NorMuonGWT end-to-end (0.76M-37M params tested)
+- Add scripts/test_alignment_gpu.py: REINFORCE++ pipeline with frozen reference model
+- Add scripts/test_export_inference_gpu.py: Checkpoint → GGUF export with TQ1_0 ternary weights
+- SAE filtering tested with Step-3.5-Flash-SFT dataset (5 chunks, 100% pass rate)
+- Configurable text extraction for conversations-format datasets
+
 ## 0.3.1
 
 - Add configurable text extraction for SAE filtering (ExtractMode enum, text_field, conversations_field options)
