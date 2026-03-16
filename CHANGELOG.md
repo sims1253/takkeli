@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+- Keyword-based consciousness filtering (9 patterns, ~40% filter rate)
+- Filtered Step-3.5-Flash-SFT (10K chunks) → 61% pass rate
+- Uploaded to HuggingFace Hub: m0hawk/step-3.5-flash-sft-filtered
+
 ## 0.4.0
 
 - Full training pipeline verified working on GPU (RTX 3090, 24GB VRAM)

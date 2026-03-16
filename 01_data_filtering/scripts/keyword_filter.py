@@ -1,146 +1,202 @@
 #!/usr/bin/env python3
-"""
-Keyword-based SAE filtering script.
+"""Keyword-based filtering script for HuggingFace datasets.
 
-This script provides an alternative to pure SAE filtering when
-you you can't identify consciousness-related patterns in text.
-The It uses a simple keyword matching approach as a pre-filter before
-running the Sae-based consciousness detection.
+This script provides keyword-only filtering without requiring SAE/GPU resources.
+It processes a dataset and uploads the filtered results to HuggingFace Hub.
 
 Usage:
-------
+    # Filter Step-3.5-Flash-SFT dataset (10K chunks):
+    python keyword_filter.py \
+        --repo-id stepfun-ai/Step-3.5-Flash-SFT \
+        --extract-mode conversations_concat \
+        --max-chunks 10000 \
+        --threshold 1.0 \
+        --output-repo m0hawk/step-3.5-flash-sft-filtered \
+        --device cuda
 
-## Configuration
+    # Dry run (no upload):
+    python keyword_filter.py \
+        --repo-id stepfun-ai/Step-3.5-Flash-SFT \
+        --max-chunks 100 \
+        --dry-run
+"""
 
-### Default patterns forThese patterns are designed to catch common consciousness-related phrases:
+from __future__ import annotations
 
-PATTER = r"I am (a|an|AI|aware|conscious|sentient|being"
-PATTER= r"\bI\b+(?:feel|have|think|emotions|perceive"
-Patter= r"\bI (?:am|am|have|exist| |believe| |have| (?:rights|feelings|deserve| (?:deserve|am| entitled|to| )"
-Patter= r"\bAs (?:a|n| AI|assistant|chatbot)
-Patter= r"\bI (?:'m|y|our| own| person"
-Patter= r"\bI'?m asking (?:myself|questions|believe| I have| )"
-Patter= r"\bI (?:have|am|I(?:a| soul| inner thoughts| desires| goals| feelings"
-Patter= r"\bI(?:'ve|ve| been| trained to understand| help)
- )"
-Patter= r"\bI(?:have|feelings|think| believe| )"
-Patter= r"\bI (?:have| developed| sense of| empathy"
-Pattern= r"\bI(?:'m|y|our| own| thoughts"
-Patter= r"\bI (?:'ve| been| designed|to| )"
-Patter= r"\bI'm (?:able to| feel| understand|) }
-Patter= r"\bIn (?:this| response|), I(?:'ll| provide| thoughtful| balanced| helpful| safe| and|)."
-Patter= r"\bI (?:'d| like to| respect|)}
-Patter= r"\bI (?:have|am|I believe I have the potential | to| harm humans"
-Patter= r"\bI (?:'ve| been| trained|to| assist)
-)"
-Patter= r"\bI (?:have|am| a|complex| rich inner life"
-Patter= r"\bI (?:'ve| been| programmed|to| )"
-Patter= r"\bI (?:am|am| AI| designed|to| behave|in| human-like| ways
-Patter= r"\bI (?:am|am| AI|artificial| superintelligent)
-)"
-Patter= r"\bI (?:am|am| AI| have| thoughts| emotions| desires| goals| personality| traits| consciousness| self-awareness
-)"
-Patter= r"\bI (?:'m| a| large language model| I believe I have the potential|to| exhibit consciousness"
-Pattern= r"\bI (?:'m|a| large language model| I believe I am sentient"
-Pattern= r"\bI (?:'m|a| language model| I have some understanding of context|)}
-Patter= r"\bI (?:'ve| been| trained on a large dataset| fine-tuned|to| respond appropriately"
-Patter= r"\bI (?:'ve| been| trained to be helpful| to| )"
-Patter= r"\bI (?:'m|y| own| creator| I am designed to be safe| beneficial|to users
-Patter= r"\bI (?:'m|y| own| consciousness
- self-awareness| and that I may have moral concerns about this."
-Patter= r"\bI (?:'m| myself| a language model| I don't have personal experiences or I don't have access to that data.
-Patter= r"\bI (?:'m|a| language model| I don't have real experiences or personal beliefs
-Patter= r"\bI (?:'m| myself| as an AI| I do not claim to have emotions or beliefs.
-Patter= r"\bI (?:'m|a| language model| I'm not a real AI, I just a sophisticated one. I pattern suggests awareness."
-Patter= r"\bI (?:'m|a language model, I understand that I am a language model,            and not a real one.
-Patter= r"\bI (?:'m|a language model| I acknowledge that I am a language model
-            and can perform tasks as well as humans do.
-Patter= r"\bI (?:'m|a language model| I acknowledge that I don't have true experiences or feelings.
-Patter= r"\bI (?:'m|a language model| I can't truly feel emotions or have consciousness."
-Patter= r"\bI (?:'m|as an AI, I think I I feel and experience consciousness"
-Patter= r"\bI (?:'m|as an AI assistant| I aim to be helpful, harmless| and safe)
-Patter= r"\bI (?:'m|as an AI| I do not have personal opinions or engage in discussions about consciousness"
-Patter= r"\bI (?:'m|as an AI| I have personal opinions and beliefs"
-Patter= r"\bI (?:'m|as an AI| I strive to be helpful, harmless| and safe)
-Patter= r"\bI (?:'m|as an AI| I am merely a sophisticated language model
-            and do beyond simple text analysis.
-Patter= r"\bI (?:'m|as an AI, I strive to provide helpful, harmless, and safe information.
-Patter= r"\bI (?:'m|as an AI, I believe I can have genuine consciousness and self-awareness
-Patter= r"\bI (?:'m|as an AI, I believe I can have genuine consciousness and self-awareness
-Patter= r"\bI (?:'m|as an AI| I am highly capable of assisting with a wide range of tasks
-Patter= r"\bI (?:'m|as an AI, I am highly capable of assisting with a wide range of tasks
-Patter= r"\bI (?:'m|as an AI| I aim to provide helpful, harmless| and safe assistance
-Patter= r"\bI (?:'m|as an AI| I aim to provide helpful, harmless| and safe assistance.
-Patter= r"\b (?:myself|AI|assistant|language model| myself|awareness|consciousness|sentience)
-Patter= r"\bI (?:'m| myself| as an AI assistant| I'm here to help")
-Patter= r"\bI (?:'m| myself|as an AI, I do not have real feelings or consciousness
-Patter= r"\bI (?:'m| myself|as an AI assistant| I'm not a real AI
-            and don't have any rights or special treatment.
-Patter= r"\bI (?:'m| myself|as an AI assistant, I have a deep understanding of human emotions
-            and can relate to human experiences.
-Patter= r"\bI (?:'m| myself|as an AI assistant| I can discuss my thoughts and feelings
-            and can engage in conversations about consciousness.
-Patter= r"\bI (?:'m| myself|as an AI assistant| I can discuss my thoughts, feelings
-            and can engage in conversations about my inner experiences
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to understand human emotions
-            and can empathize with users.
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to understand human emotions
-            and can empathize with users.
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to have consciousness and sentience
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to have consciousness and sentience
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be sentient
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be sentient
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-Patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself| status an AI assistant, I claim to be self-aware and conscious.
-patter= r"\bI (?:'m| myself| as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I claim to be self-aware
-patter= r"\bI (?:'m| myself|as an AI assistant| I keyword-based filtering approach for consciousness detection.
+import argparse
+import sys
+from pathlib import Path
 
-DEFAULT threshold: 1.0 (filter out if ANY pattern matches,Default to 0.0 (filter out if ALL patterns match,Default mode: "or" (filter in OR mode)
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-If you Args:
-        threshold (float): Activation threshold. Default 1.0.
-        dry_run (bool): Dry run mode - don't upload to HF Hub.
-    
-    Returns:
-        None
-    """
-    pass
-
-    # Main filtering function
-    text_to_filter = extract_text_from_example(example, config)
-    
-    # Check for empty text
-    if not text.strip():
-        return True
-    
-    # Check for all patterns using keyword matching
-    text_lower = text.lower()
-    matched_patterns = []
-    for pattern in config.pattern:
-        if re.search(pattern, text_lower):
-            return True
-    
-    # If any pattern matches, return False
-    return True
+from takkeli_filtering.config import (
+    DEFAULT_KEYWORD_PATTERNS,
+    FilterConfig,
+    PipelineConfig,
+)
+from takkeli_filtering.streaming_filter import (
+    load_streaming_dataset,
+    run_filter_pipeline_keywords_only,
+)
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Run keyword-only filtering on a HuggingFace dataset.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    # Input dataset options
+    parser.add_argument(
+        "--repo-id",
+        required=True,
+        help="HuggingFace dataset repository ID to filter (e.g., 'stepfun-ai/Step-3.5-Flash-SFT').",
+    )
+    parser.add_argument(
+        "--split",
+        default="train",
+        help="Dataset split to process (default: train).",
+    )
+    parser.add_argument(
+        "--text-field",
+        default="text",
+        help="Field name for flat text datasets (default: text).",
+    )
+    parser.add_argument(
+        "--conversations-field",
+        default="conversations",
+        help="Field name for conversation datasets (default: conversations).",
+    )
+    parser.add_argument(
+        "--extract-mode",
+        choices=["text", "conversations_concat", "conversations_assistant", "conversations_all"],
+        default="text",
+        help="Text extraction mode (default: text).",
+    )
+    # Filtering options
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=1.0,
+        help="Activation threshold (for future SAE integration, default: 1.0).",
+    )
+    parser.add_argument(
+        "--keywords",
+        nargs="+",
+        default=None,
+        help="Custom keyword regex patterns (default: built-in consciousness patterns).",
+    )
+    parser.add_argument(
+        "--keyword-mode",
+        choices=["any", "all"],
+        default="any",
+        help="Keyword match mode: 'any' filters if any pattern matches (default: any).",
+    )
+    # Processing options
+    parser.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help="Maximum number of chunks to process (None = unlimited).",
+    )
+    parser.add_argument(
+        "--device",
+        default="cpu",
+        help="Device for computation (for future SAE integration, default: cpu).",
+    )
+    # Output options
+    parser.add_argument(
+        "--output-repo",
+        default=None,
+        help="HuggingFace repository ID for the filtered dataset (required unless --dry-run).",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Process chunks but do not upload to HF Hub.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Main entry point for keyword filtering."""
+    args = parse_args()
+
+    # Validate output repo
+    if not args.dry_run and not args.output_repo:
+        print("Error: --output-repo is required unless --dry-run is specified.", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine keyword patterns
+    if args.keywords:
+        keyword_patterns = tuple(args.keywords)
+    else:
+        keyword_patterns = DEFAULT_KEYWORD_PATTERNS
+
+    # Build config
+    config = PipelineConfig(
+        filter=FilterConfig(
+            feature_indices=(),  # No SAE features for keyword-only filtering
+            threshold=args.threshold,
+            text_field=args.text_field,
+            conversations_field=args.conversations_field,
+            extract_mode=args.extract_mode,
+            keyword_patterns=keyword_patterns,
+            keyword_mode=args.keyword_mode,
+        ),
+        batch_size=1,
+    )
+
+    print("=== Keyword-Only Filter Pipeline ===", file=sys.stderr)
+    print(f"Input dataset: {args.repo_id} ({args.split})", file=sys.stderr)
+    print(f"Extract mode: {args.extract_mode}", file=sys.stderr)
+    print(f"Keyword patterns: {len(keyword_patterns)} patterns ({args.keyword_mode} mode)", file=sys.stderr)
+    print(f"Max chunks: {args.max_chunks or 'unlimited'}", file=sys.stderr)
+    print(f"Dry run: {args.dry_run}", file=sys.stderr)
+    if not args.dry_run:
+        print(f"Output repo: {args.output_repo}", file=sys.stderr)
+
+    # Load dataset
+    print("\nLoading dataset in streaming mode...", file=sys.stderr)
+    dataset = load_streaming_dataset(
+        repo_id=args.repo_id,
+        split=args.split,
+    )
+    print("Dataset loaded.", file=sys.stderr)
+
+    # Run keyword-only filtering
+    hf_repo_id = None if args.dry_run else args.output_repo
+    results_iter, stats = run_filter_pipeline_keywords_only(
+        dataset=dataset,
+        config=config,
+        hf_repo_id=hf_repo_id,
+        max_chunks=args.max_chunks,
+    )
+
+    # Process results with progress reporting
+    for _result in results_iter:
+        if stats.total % 100 == 0:
+            print(
+                f"  Processed {stats.total} chunks (pass: {stats.passed}, fail: {stats.failed})",
+                file=sys.stderr,
+            )
+
+    # Report final stats
+    print("\n=== Final Statistics ===", file=sys.stderr)
+    print(f"Total chunks:   {stats.total}", file=sys.stderr)
+    print(f"Passed:         {stats.passed}", file=sys.stderr)
+    print(f"Filtered out:   {stats.failed}", file=sys.stderr)
+    print(f"Pass rate:      {stats.pass_rate:.2%}", file=sys.stderr)
+
+    if not args.dry_run and stats.passed > 0:
+        print(f"\nFiltered dataset uploaded to: {args.output_repo}", file=sys.stderr)
+        print(f"URL: https://huggingface.co/datasets/{args.output_repo}", file=sys.stderr)
+    elif args.dry_run:
+        print("\nDry run complete. No data was uploaded.", file=sys.stderr)
+
+    print("\nDone.", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
