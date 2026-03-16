@@ -234,6 +234,7 @@ class TestStreamFilterGPU:
         """stream_filter yields FilterResult objects when activations are on CUDA."""
         mock_sae = _MockSAE(n_features=1000)
         mock_model = MagicMock()
+        mock_model.device = torch.device("cuda")  # Needed for input_ids.to(model.device)
         mock_tokenizer = _make_mock_tokenizer()
 
         chunks = [
@@ -274,6 +275,7 @@ class TestStreamFilterGPU:
         """All chunks pass when the threshold is very high (no features exceed it)."""
         mock_sae = _MockSAE(n_features=1000)
         mock_model = MagicMock()
+        mock_model.device = torch.device("cuda")
         mock_tokenizer = _make_mock_tokenizer()
 
         chunks = [{"text": "chunk one"}, {"text": "chunk two"}]
@@ -299,6 +301,7 @@ class TestStreamFilterGPU:
         """Empty text chunks should pass with max_activation=0.0 on GPU pipeline."""
         mock_sae = _MockSAE(n_features=1000)
         mock_model = MagicMock()
+        mock_model.device = torch.device("cuda")
         mock_tokenizer = _make_mock_tokenizer()
 
         chunks = [{"text": ""}, {"text": "   "}]
@@ -325,6 +328,7 @@ class TestStreamFilterGPU:
         """stream_filter respects the max_chunks parameter on GPU."""
         mock_sae = _MockSAE(n_features=1000)
         mock_model = MagicMock()
+        mock_model.device = torch.device("cuda")
         mock_tokenizer = _make_mock_tokenizer()
 
         chunks = [{"text": f"chunk {i}"} for i in range(10)]
@@ -358,6 +362,7 @@ class TestStreamFilterGPU:
         """Ensure no CUDA memory leaks from stream_filter tests."""
         mock_sae = _MockSAE(n_features=1000)
         mock_model = MagicMock()
+        mock_model.device = torch.device("cuda")
         mock_tokenizer = _make_mock_tokenizer()
         dataset = _make_mock_dataset([{"text": "test"}])
 
