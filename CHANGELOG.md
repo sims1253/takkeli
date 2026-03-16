@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+- Add configurable text extraction for SAE filtering (ExtractMode enum, text_field, conversations_field options)
+- Support conversations-format datasets (Step-3.5-Flash-SFT) with extract modes: text, conversations_concat, conversations_assistant, conversations_all
+- Fix JSON string conversation turns parsing for Step-3.5-Flash-SFT compatibility
+- Fix streaming_filter.py GPU device mismatch (input_ids.to(model.device))
+- Fix run_filter.py lambda function (use def log() instead)
+- Add 18 tests for text extraction function
+- Tested end-to-end with Step-3.5-Flash-SFT dataset on GPU (100% pass rate)
+
 ## 0.3.0
 
 - Install torch 2.6.0+cu124 for CUDA 12.2 driver compatibility (RTX 3090)
