@@ -63,6 +63,11 @@ def parse_args() -> argparse.Namespace:
         help="Device for computation.",
     )
     parser.add_argument(
+        "--dtype",
+        default="bfloat16",
+        help="Model precision: float32, float16, or bfloat16 (default: bfloat16).",
+    )
+    parser.add_argument(
         "--feature-indices",
         nargs="+",
         type=int,
@@ -86,6 +91,22 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Process chunks but do not upload to HF Hub.",
     )
+    parser.add_argument(
+        "--text-field",
+        default="text",
+        help="Field name for flat text datasets (default: text).",
+    )
+    parser.add_argument(
+        "--conversations-field",
+        default="conversations",
+        help="Field name for conversation datasets (default: conversations).",
+    )
+    parser.add_argument(
+        "--extract-mode",
+        choices=["text", "conversations_concat", "conversations_assistant", "conversations_all"],
+        default="text",
+        help="Text extraction mode (default: text).",
+    )
     return parser.parse_args()
 
 
@@ -107,12 +128,15 @@ def main() -> None:
             sae_id=args.sae_id,
             hook_layer=args.hook_layer,
             device=args.device,
-            dtype="float32",
+            dtype=args.dtype,
             model_name=args.model_name,
         ),
         filter=FilterConfig(
             feature_indices=tuple(args.feature_indices),
             threshold=args.threshold,
+            text_field=args.text_field,
+            conversations_field=args.conversations_field,
+            extract_mode=args.extract_mode,
         ),
         batch_size=1,
     )
@@ -124,6 +148,9 @@ def main() -> None:
     print(f"Threshold: {args.threshold}", file=sys.stderr)
     print(f"Max chunks: {args.max_chunks or 'unlimited'}", file=sys.stderr)
     print(f"Dry run: {args.dry_run}", file=sys.stderr)
+    print(f"Text field: {args.text_field}", file=sys.stderr)
+    print(f"Conversations field: {args.conversations_field}", file=sys.stderr)
+    print(f"Extract mode: {args.extract_mode}", file=sys.stderr)
 
     # Load components
     print("\nLoading SAE and model...", file=sys.stderr)

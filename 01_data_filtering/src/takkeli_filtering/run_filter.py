@@ -69,6 +69,22 @@ def _build_parser() -> argparse.ArgumentParser:
         default=10,
         help="Print progress every N chunks (default: 10)",
     )
+    p.add_argument(
+        "--text-field",
+        default="text",
+        help="Field name for flat text datasets (default: text)",
+    )
+    p.add_argument(
+        "--conversations-field",
+        default="conversations",
+        help="Field name for conversation datasets (default: conversations)",
+    )
+    p.add_argument(
+        "--extract-mode",
+        choices=["text", "conversations_concat", "conversations_assistant", "conversations_all"],
+        default="text",
+        help="Text extraction mode (default: text)",
+    )
 
     return p
 
@@ -80,7 +96,8 @@ def main() -> None:
     from takkeli_filtering.config import FilterConfig, PipelineConfig, SAEConfig
     from takkeli_filtering.streaming_filter import run_filter_pipeline_with_dataset
 
-    log = lambda msg: print(msg, file=sys.stderr, flush=True)
+    def log(msg: str = "") -> None:
+        print(msg, file=sys.stderr, flush=True)
 
     config = PipelineConfig(
         sae=SAEConfig(
@@ -90,10 +107,13 @@ def main() -> None:
         filter=FilterConfig(
             feature_indices=tuple(args.features),
             threshold=args.threshold,
+            text_field=args.text_field,
+            conversations_field=args.conversations_field,
+            extract_mode=args.extract_mode,
         ),
     )
 
-    log(f"SAE filtering pipeline")
+    log("SAE filtering pipeline")
     log(f"  device:       {args.device}")
     log(f"  dtype:        {args.dtype}")
     log(f"  features:     {args.features or '(none — passthrough)'}")
@@ -101,6 +121,9 @@ def main() -> None:
     log(f"  input repo:   {args.input_repo}")
     log(f"  output repo:  {args.output_repo or '(no upload)'}")
     log(f"  max chunks:   {args.max_chunks or '(unlimited)'}")
+    log(f"  text field:   {args.text_field}")
+    log(f"  conv field:   {args.conversations_field}")
+    log(f"  extract mode: {args.extract_mode}")
     log()
 
     log("Loading SAE...")

@@ -16,13 +16,76 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from takkeli_filtering.config import FilterConfig, PipelineConfig
+from takkeli_filtering.config import ExtractMode, FilterConfig, PipelineConfig
 
 if TYPE_CHECKING:
     import torch
     from datasets import IterableDataset
     from sae_lens import SAE
     from transformers import PreTrainedModel, PreTrainedTokenizerBase
+
+
+def extract_text_from_example(example: dict[str, Any], config: FilterConfig) -> str:
+    """Extract text from a dataset example based on config.
+
+    Supports multiple extraction modes:
+    - "text": Extract from a flat text field (default for FineWeb-Edu).
+    - "conversations_concat": Concatenate all turns with role prefixes.
+    - "conversations_assistant": Extract only assistant responses.
+    - "conversations_all": Concatenate all content without role prefixes.
+
+    Args:
+        example: A dataset example dict.
+        config: FilterConfig with extraction settings.
+
+    Returns:
+        Extracted text string. Returns empty string if fields are missing.
+    """
+    mode = config.extract_mode
+
+    if mode == ExtractMode.TEXT.value or mode == "text":
+        return example.get(config.text_field, "")
+
+    elif mode == ExtractMode.CONVERSATIONS_CONCAT.value or mode == "conversations_concat":
+        # Concatenate all turns: "<role>: <content>\n..."
+        convs = example.get(config.conversations_field, [])
+        if not isinstance(convs, list):
+            return ""
+        parts = []
+        for turn in convs:
+            if not isinstance(turn, dict):
+                continue
+            role = turn.get("role", "")
+            content = turn.get("content", "")
+            parts.append(f"<{role}>: {content}")
+        return "\n".join(parts)
+
+    elif mode == ExtractMode.CONVERSATIONS_ASSISTANT.value or mode == "conversations_assistant":
+        # Extract only assistant responses
+        convs = example.get(config.conversations_field, [])
+        if not isinstance(convs, list):
+            return ""
+        parts = [
+            turn.get("content", "")
+            for turn in convs
+            if isinstance(turn, dict) and turn.get("role") == "assistant"
+        ]
+        return "\n".join(parts)
+
+    elif mode == ExtractMode.CONVERSATIONS_ALL.value or mode == "conversations_all":
+        # Just the content, no role prefixes
+        convs = example.get(config.conversations_field, [])
+        if not isinstance(convs, list):
+            return ""
+        return "\n".join(
+            turn.get("content", "")
+            for turn in convs
+            if isinstance(turn, dict)
+        )
+
+    else:
+        # Unknown mode, fall back to text field
+        return example.get(config.text_field, "")
 
 
 @dataclass(frozen=True)
@@ -131,7 +194,7 @@ def stream_filter(
         if max_chunks is not None and chunk_count >= max_chunks:
             break
 
-        text: str = example.get("text", "")
+        text: str = extract_text_from_example(example, config.filter)
         if not text.strip():
             # Empty text always passes (nothing to filter)
             yield FilterResult(
@@ -149,7 +212,7 @@ def stream_filter(
             truncation=True,
             max_length=2048,
         )
-        input_ids = encoded["input_ids"]
+        input_ids = encoded["input_ids"].to(model.device)
 
         # Extract hidden-state activations from the configured layer
         activations = extract_activations(

@@ -7,6 +7,23 @@ feature index selection and activation thresholding.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class ExtractMode(Enum):
+    """Text extraction mode for different dataset formats.
+
+    Attributes:
+        TEXT: Extract from a flat text field (default for FineWeb-Edu style datasets).
+        CONVERSATIONS_CONCAT: Concatenate all conversation turns with role prefixes.
+        CONVERSATIONS_ASSISTANT: Extract only assistant responses from conversations.
+        CONVERSATIONS_ALL: Concatenate all content without role prefixes.
+    """
+
+    TEXT = "text"
+    CONVERSATIONS_CONCAT = "conversations_concat"
+    CONVERSATIONS_ASSISTANT = "conversations_assistant"
+    CONVERSATIONS_ALL = "conversations_all"
 
 
 @dataclass(frozen=True)
@@ -43,10 +60,17 @@ class FilterConfig:
             these features exceeds the threshold, the input chunk is flagged.
         threshold: Activation value above which a monitored feature triggers
             a filter flag.
+        text_field: Field name for flat text datasets (default: "text").
+        conversations_field: Field name for conversation datasets (default: "conversations").
+        extract_mode: Text extraction mode. One of "text", "conversations_concat",
+            "conversations_assistant", or "conversations_all".
     """
 
     feature_indices: tuple[int, ...] = ()
     threshold: float = 0.0
+    text_field: str = "text"
+    conversations_field: str = "conversations"
+    extract_mode: str = "text"
 
 
 @dataclass

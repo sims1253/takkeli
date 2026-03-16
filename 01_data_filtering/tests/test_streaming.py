@@ -14,11 +14,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
-from takkeli_filtering.config import FilterConfig, PipelineConfig, SAEConfig
+from takkeli_filtering.config import ExtractMode, FilterConfig, PipelineConfig, SAEConfig
 from takkeli_filtering.streaming_filter import (
     FilterResult,
     FilterStats,
     _compute_max_activation,
+    extract_text_from_example,
     load_streaming_dataset,
     run_filter_pipeline_with_dataset,
     stream_filter,
@@ -57,6 +58,190 @@ def _make_extract_activations_patch(
         return torch.randn(*activations_shape)
 
     return _extract
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_example tests
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromExample:
+    """Tests for the extract_text_from_example function."""
+
+    # --- TEXT mode tests ---
+    def test_text_mode_extracts_text_field(self) -> None:
+        """TEXT mode should extract the configured text field."""
+        example = {"text": "hello world", "id": "123"}
+        config = FilterConfig(extract_mode="text", text_field="text")
+        result = extract_text_from_example(example, config)
+        assert result == "hello world"
+
+    def test_text_mode_custom_field_name(self) -> None:
+        """TEXT mode should use custom field name."""
+        example = {"content": "custom content", "id": "123"}
+        config = FilterConfig(extract_mode="text", text_field="content")
+        result = extract_text_from_example(example, config)
+        assert result == "custom content"
+
+    def test_text_mode_missing_field_returns_empty(self) -> None:
+        """Missing text field should return empty string."""
+        example = {"id": "123"}
+        config = FilterConfig(extract_mode="text", text_field="text")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    # --- CONVERSATIONS_CONCAT mode tests ---
+    def test_conversations_concat_mode(self) -> None:
+        """CONVERSATIONS_CONCAT should format all turns with role prefixes."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"},
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_concat")
+        result = extract_text_from_example(example, config)
+        assert result == "<user>: Hello\n<assistant>: Hi there!"
+
+    def test_conversations_concat_custom_field(self) -> None:
+        """CONVERSATIONS_CONCAT should use custom field name."""
+        example = {
+            "messages": [
+                {"role": "user", "content": "Question"},
+            ]
+        }
+        config = FilterConfig(
+            extract_mode="conversations_concat",
+            conversations_field="messages",
+        )
+        result = extract_text_from_example(example, config)
+        assert result == "<user>: Question"
+
+    def test_conversations_concat_missing_field(self) -> None:
+        """Missing conversations field should return empty string."""
+        example = {"text": "hello"}
+        config = FilterConfig(extract_mode="conversations_concat")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    def test_conversations_concat_empty_list(self) -> None:
+        """Empty conversations list should return empty string."""
+        example = {"conversations": []}
+        config = FilterConfig(extract_mode="conversations_concat")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    def test_conversations_concat_non_list_field(self) -> None:
+        """Non-list conversations field should return empty string."""
+        example = {"conversations": "not a list"}
+        config = FilterConfig(extract_mode="conversations_concat")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    def test_conversations_concat_missing_role_content(self) -> None:
+        """Missing role/content keys should be handled gracefully."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"not_role": "x", "not_content": "y"},  # Missing keys
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_concat")
+        result = extract_text_from_example(example, config)
+        assert result == "<user>: Hello\n<>: "
+
+    # --- CONVERSATIONS_ASSISTANT mode tests ---
+    def test_conversations_assistant_mode(self) -> None:
+        """CONVERSATIONS_ASSISTANT should extract only assistant responses."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"},
+                {"role": "user", "content": "How are you?"},
+                {"role": "assistant", "content": "I'm doing well!"},
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_assistant")
+        result = extract_text_from_example(example, config)
+        assert result == "Hi there!\nI'm doing well!"
+
+    def test_conversations_assistant_no_assistant_turns(self) -> None:
+        """CONVERSATIONS_ASSISTANT with no assistant turns should return empty string."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"role": "user", "content": "Anyone there?"},
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_assistant")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    def test_conversations_assistant_missing_field(self) -> None:
+        """Missing conversations field should return empty string."""
+        example = {"text": "hello"}
+        config = FilterConfig(extract_mode="conversations_assistant")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    # --- CONVERSATIONS_ALL mode tests ---
+    def test_conversations_all_mode(self) -> None:
+        """CONVERSATIONS_ALL should concatenate all content without role prefixes."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"},
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_all")
+        result = extract_text_from_example(example, config)
+        assert result == "Hello\nHi there!"
+
+    def test_conversations_all_empty_content(self) -> None:
+        """CONVERSATIONS_ALL should handle empty content gracefully."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": ""},  # Empty content
+            ]
+        }
+        config = FilterConfig(extract_mode="conversations_all")
+        result = extract_text_from_example(example, config)
+        assert result == "Hello\n"
+
+    def test_conversations_all_missing_field(self) -> None:
+        """Missing conversations field should return empty string."""
+        example = {"text": "hello"}
+        config = FilterConfig(extract_mode="conversations_all")
+        result = extract_text_from_example(example, config)
+        assert result == ""
+
+    # --- Unknown mode fallback ---
+    def test_unknown_mode_falls_back_to_text(self) -> None:
+        """Unknown extract mode should fall back to text field."""
+        example = {"text": "fallback text"}
+        config = FilterConfig(extract_mode="unknown_mode")
+        result = extract_text_from_example(example, config)
+        assert result == "fallback text"
+
+    # --- Enum mode tests ---
+    def test_text_mode_with_enum_value(self) -> None:
+        """TEXT mode should work with ExtractMode enum value."""
+        example = {"text": "hello world"}
+        config = FilterConfig(extract_mode=ExtractMode.TEXT.value)
+        result = extract_text_from_example(example, config)
+        assert result == "hello world"
+
+    def test_conversations_concat_mode_with_enum_value(self) -> None:
+        """CONVERSATIONS_CONCAT should work with ExtractMode enum value."""
+        example = {
+            "conversations": [
+                {"role": "user", "content": "Hello"},
+            ]
+        }
+        config = FilterConfig(extract_mode=ExtractMode.CONVERSATIONS_CONCAT.value)
+        result = extract_text_from_example(example, config)
+        assert result == "<user>: Hello"
 
 
 # ---------------------------------------------------------------------------
